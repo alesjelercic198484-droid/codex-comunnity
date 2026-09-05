@@ -14,6 +14,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css">
 
     <style>
+      nav.topnav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        background: rgba(0,0,0,0.35);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      nav.topnav .brand {
+        font-family: 'Pacifico', cursive;
+        font-size: 1.5rem;
+        color: #14B8A6;
+        text-decoration: none;
+      }
+      nav.topnav .nav-links { display: flex; align-items: center; gap: 16px; }
+      nav.topnav .nav-links a { color: white; text-decoration: none; font-weight: bold; }
+      nav.topnav .nav-links a:hover { color: #14B8A6; }
+      .btn.secondary { background: rgba(255,255,255,0.12); }
+      .btn.secondary:hover { background: rgba(255,255,255,0.2); }
       body {
         font-family: Arial, sans-serif;
         margin: 0;
@@ -51,9 +72,18 @@
     </style>
   </head>
   <body>
+    <nav class="topnav">
+      <a class="brand" href="/">🎮 CodeX <span style="color:white">Community</span></a>
+      <div class="nav-links">
+        <a href="./">Domov</a>
+        <a href="wl.html" class="btn small">📝 Prijava WL</a>
+      </div>
+    </nav>
+
     <header>
       <h1>CodeX Community</h1>
       <p>Premium FiveM Roleplay Server with custom content and unique features.</p>
+      <a href="wl.html" class="btn secondary">📝 Prijava WL</a>
       <!-- TODO: Zamenjaj spodnji placeholder z pravo Discord povabljivo povezavo (npr. https://discord.gg/tvoja-koda) -->
       <a href="https://discord.gg/YOUR_DISCORD_LINK" class="btn" rel="noopener"><i class="fab fa-discord"></i> Join Discord</a>
     </header>

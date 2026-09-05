@@ -1,0 +1,222 @@
+/* CodeX Community – WL sistem */
+* { box-sizing: border-box; }
+
+:root {
+  --bg1: #141E30;
+  --bg2: #243B55;
+  --accent: #14B8A6;
+  --accent-dark: #0d9488;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --text: #eef2f7;
+  --muted: #9fb0c3;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --ok: #22c55e;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg1), var(--bg2)) fixed;
+  color: var(--text);
+}
+
+/* Navigacija */
+.topnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--card-border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.topnav .brand {
+  font-family: 'Pacifico', cursive;
+  font-size: 1.5rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.topnav .brand span { color: var(--text); }
+.nav-user { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nav-user .who { color: var(--muted); font-size: 0.95rem; }
+.nav-user .who b { color: var(--text); }
+
+/* Splošno */
+.container { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; font-size: 1.3rem; }
+h2 i { color: var(--accent); }
+a { color: var(--accent); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.btn {
+  display: inline-block;
+  padding: 11px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent-dark); }
+.btn.secondary { background: rgba(255, 255, 255, 0.12); }
+.btn.secondary:hover { background: rgba(255, 255, 255, 0.2); }
+.btn.approve { background: var(--ok); }
+.btn.approve:hover { background: #16a34a; }
+.btn.deny { background: var(--danger); }
+.btn.deny:hover { background: #dc2626; }
+.btn.small { padding: 7px 14px; font-size: 0.88rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+label { display: block; margin-bottom: 14px; font-size: 0.92rem; color: var(--muted); }
+input, textarea, select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+}
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+select { width: auto; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+@media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+.muted { color: var(--muted); font-size: 0.9rem; }
+.error { color: var(--danger); font-weight: bold; }
+.info-box {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fcd34d;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.success-box {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #86efac;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+/* Zavihki prijave/registracije */
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab {
+  flex: 1;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--card-border);
+  color: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.auth-card { max-width: 460px; margin: 40px auto; }
+
+/* Vloge */
+.role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.role-player { background: rgba(255, 255, 255, 0.14); color: #cbd5e1; }
+.role-moderator { background: rgba(20, 184, 166, 0.25); color: #5eead4; }
+.role-administrator { background: rgba(239, 68, 68, 0.22); color: #fca5a5; }
+
+/* Status prijav */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+.badge.pending { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+.badge.approved { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+.badge.denied { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+
+/* Prijavnice */
+.app-item {
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.app-item .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.app-item .head .title { font-weight: bold; font-size: 1.05rem; }
+.app-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.app-item .fields { margin: 12px 0; display: grid; gap: 4px; font-size: 0.94rem; }
+.app-item .fields .k { color: var(--muted); }
+.app-item .long { white-space: pre-wrap; background: rgba(0, 0, 0, 0.22); padding: 10px 12px; border-radius: 8px; margin-top: 6px; }
+.app-item .review-out { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--card-border); font-size: 0.92rem; }
+.review-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: flex-start; }
+.review-row textarea { flex: 1; min-width: 220px; }
+
+/* Filtri */
+.filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.chip {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Tabela uporabnikov (admin) */
+table.users { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+table.users th, table.users td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--card-border); }
+table.users th { color: var(--muted); font-weight: 600; }
+
+.empty { color: var(--muted); text-align: center; padding: 18px; }
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.hidden { display: none !important; }
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: bold;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+#toast.error { background: var(--danger); }

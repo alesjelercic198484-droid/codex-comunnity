@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="sl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prijava WL – CodeX Community</title>
+    <meta name="description" content="Whitelist prijava na FiveM strežnik CodeX Community.">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <nav class="topnav">
+      <a class="brand" href="/">🎮 CodeX <span>Community</span></a>
+      <div id="nav-user" class="nav-user"></div>
+    </nav>
+
+    <main class="container">
+      <!-- ========== PRIJAVA / REGISTRACIJA ========== -->
+      <section id="auth-view" class="card auth-card hidden">
+        <div class="tabs">
+          <button type="button" id="tab-login" class="tab active">Prijava</button>
+          <button type="button" id="tab-register" class="tab">Registracija</button>
+        </div>
+
+        <form id="login-form">
+          <h2><i class="fa-solid fa-right-to-bracket"></i> Prijava</h2>
+          <label>Uporabniško ime
+            <input name="username" required autocomplete="username" />
+          </label>
+          <label>Geslo
+            <input name="password" type="password" required autocomplete="current-password" />
+          </label>
+          <button class="btn" type="submit">Prijava</button>
+          <p class="muted" style="margin-top:14px">Še nimate računa? Kliknite <b>Registracija</b> zgoraj.</p>
+        </form>
+
+        <form id="register-form" class="hidden">
+          <h2><i class="fa-solid fa-user-plus"></i> Registracija</h2>
+          <label>Uporabniško ime (3–24 znakov)
+            <input name="username" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]+" autocomplete="username" />
+          </label>
+          <label>Geslo (vsaj 6 znakov)
+            <input name="password" type="password" required minlength="6" autocomplete="new-password" />
+          </label>
+          <label>Staff koda <span class="muted">(samo za moderatorje/administratorje)</span>
+            <input name="staffCode" placeholder="pustite prazno, če ste igralec" autocomplete="off" />
+          </label>
+          <button class="btn" type="submit">Ustvari račun</button>
+        </form>
+
+        <p id="auth-error" class="error hidden" style="margin-top:14px"></p>
+      </section>
+
+      <!-- ========== GLAVNI POGLED ========== -->
+      <div id="app-view" class="hidden">
+        <div id="notice" class="hidden"></div>
+
+        <!-- Nova prijava -->
+        <section class="card" id="new-app-section">
+          <h2><i class="fa-solid fa-file-signature"></i> Nova WL prijava</h2>
+          <form id="application-form">
+            <div class="grid2">
+              <label>RP ime in priimek
+                <input name="rpName" required minlength="3" maxlength="64" placeholder="npr. Janez Novak" />
+              </label>
+              <label>Starost
+                <input name="age" type="number" min="13" max="99" required />
+              </label>
+              <label>Discord tag
+                <input name="discordTag" required maxlength="64" placeholder="npr. janez#1234" />
+              </label>
+              <label>Steam HEX
+                <input name="steamHex" required maxlength="64" placeholder="npr. steam:1100001…" />
+              </label>
+            </div>
+            <label>Izkušnje z roleplay igranjem
+              <textarea name="rpExperience" required minlength="10" maxlength="2000" rows="4" placeholder="Kje ste že igrali, koliko časa, katera lika …"></textarea>
+            </label>
+            <label>Zakaj želiš igrati na CodeX Community?
+              <textarea name="motivation" required minlength="20" maxlength="4000" rows="5" placeholder="Vsaj 20 znakov …"></textarea>
+            </label>
+            <button class="btn" type="submit"><i class="fa-solid fa-paper-plane"></i> Oddaj prijavo</button>
+          </form>
+        </section>
+
+        <!-- Moje prijave -->
+        <section class="card">
+          <h2><i class="fa-solid fa-folder-open"></i> Moje prijave</h2>
+          <div id="my-apps"></div>
+        </section>
+
+        <!-- Staff: vse prijave -->
+        <section class="card hidden" id="staff-section">
+          <h2><i class="fa-solid fa-shield-halved"></i> Prijavnice igralcev</h2>
+          <div class="filters" id="staff-filters">
+            <button type="button" class="chip active" data-f="all">Vse</button>
+            <button type="button" class="chip" data-f="pending">V obdelavi</button>
+            <button type="button" class="chip" data-f="approved">Odobrene</button>
+            <button type="button" class="chip" data-f="denied">Zavrnjene</button>
+          </div>
+          <div id="staff-apps"></div>
+        </section>
+
+        <!-- Admin: uporabniki -->
+        <section class="card hidden" id="admin-section">
+          <h2><i class="fa-solid fa-users-gear"></i> Uporabniki</h2>
+          <div id="users-table"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer>© <span id="year"></span> CodeX Community | <a href="/">Domača stran</a></footer>
+
+    <script src="wl.js"></script>
+  </body>
+</html>
