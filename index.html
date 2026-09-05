@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -54,7 +54,8 @@
     <header>
       <h1>CodeX Community</h1>
       <p>Premium FiveM Roleplay Server with custom content and unique features.</p>
-      <a href="https://discord.gg/YOUR_DISCORD_LINK" class="btn"><i class="fab fa-discord"></i> Join Discord</a>
+      <!-- TODO: Zamenjaj spodnji placeholder z pravo Discord povabljivo povezavo (npr. https://discord.gg/tvoja-koda) -->
+      <a href="https://discord.gg/YOUR_DISCORD_LINK" class="btn" rel="noopener"><i class="fab fa-discord"></i> Join Discord</a>
     </header>
 
     <main>
@@ -66,8 +67,13 @@
     </main>
 
     <footer>
-      <p>© 2025 CodeX Community | Made with ❤️ for gamers</p>
+      <p>© <span id="year">2026</span> CodeX Community | Made with ❤️ for gamers</p>
     </footer>
+
+    <script>
+      // Letopis se vedno samodejno posodobi na tekoče leto
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 
     <!-- Readdy AI Widget -->
     <script 
