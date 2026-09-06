@@ -1,0 +1,60 @@
+{
+  "_opomba": "Kopiraj to datoteko kot 'config.json' v mapo projekta na VPS-u. config.json je v .gitignore, zato se NE objavi na GitHub. Vsi podatki so lahko prepisani tudi z okoljskimi spremenljivkami (glej README.md).",
+
+  "siteName": "CodeX Community",
+  "siteTagline": "Premium FiveM Roleplay strežnik",
+  "discordInvite": "https://discord.gg/YOUR_DISCORD_LINK",
+  "serverConnect": "connect play.codex-community.si",
+
+  "port": 3000,
+  "host": "0.0.0.0",
+  "publicUrl": "http://localhost:3000",
+
+  "dataDir": "./data",
+
+  "admin": {
+    "username": "admin",
+    "_geslo_opomba": "Tu pusti prazno in nastavi geslo v nastavitvah ali z 'npm run hash'. Vpisano geslo se ob prvem zagonu zhašira (scrypt) in shrani v data/, besedilo tukaj NE ostane.",
+    "password": ""
+  },
+
+  "sessionHours": 12,
+  "secureCookies": "auto",
+  "trustProxy": true,
+  "csrfSecret": "",
+
+  "applications": {
+    "open": true,
+    "minAge": 16,
+    "maxCharsMessage": 4000,
+    "maxPerIpPerDay": 5,
+    "requireSteamId": true,
+    "requireLicenseKey": true,
+    "_koda_opomba": "Igralec prejemo kodo (npr. CDX-4F7K2A), s katero na /status preveri, kam je njegova prijava prišla."
+  },
+
+  "whitelist": {
+    "exportFile": "./data/fivem-whitelist.json",
+    "copyTo": [],
+    "_copyTo_opomba": "Lokacije, kamor naj se ob vsaki spremembi WHITELIST kopira fivem-whitelist.json, npr. [\"C:/FiveM/server/config/whitelist.json\"]. Uporabi / name za \\\\, da JSON ne pobesni."
+  },
+
+  "api": {
+    "enabled": true,
+    "token": "",
+    "_opomba": "API token omogoča FiveM skripti, da preveri whitelist: GET /api/whitelist/check?license=steam:xxxx&token=TOKEN"
+  },
+
+  "logs": {
+    "retentionDays": 90,
+    "maxFileSizeMb": 8,
+    "keepRotatedFiles": 6
+  },
+
+  "backup": {
+    "enabled": true,
+    "everyHours": 6,
+    "keepDays": 14,
+    "dir": "./data/backups"
+  }
+}

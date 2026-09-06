@@ -1,0 +1,20 @@
+# --- NE COMMITATI: vsebina, ki je na VPS-u zasebna -------------------------
+# Igralci, prijavnice, whitelist, gesla sej, dnevniki -> samo na strežniku.
+data/
+config.json
+*.log
+.env
+
+# npm / orodja
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# OS / uredniki
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp
+
+# razvojna mapa (npm run dev / scripts/dev-server.ps1)
+/dev-data/
