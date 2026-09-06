@@ -70,6 +70,14 @@ npm run seed              # vzorčni igralci in prijave za ogled admin plošče
 Prvi zagon brez `config.json` teče na privzetih vrednostih, geslo skrbnika se generira v
 `data/ADMIN-START.txt`.
 
+Če hočeš videti, kako je videti prava namestitev, si oglej namestitveni skript in
+dnevniške primere: `scripts/install-windows.ps1`, `docs/API.md`. Za hiter ogled z
+vzorčnimi podatki:
+
+```bash
+npm run seed && npm start     # nato http://localhost:3000/admin  (geslo v data/ADMIN-START.txt)
+```
+
 ## 3. Nastavitve (`config.json`)
 
 `config.json` je **v `.gitignore`** — sme obstajati samo na VPS-u. Nastavitve iz
