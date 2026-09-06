@@ -1,0 +1,108 @@
+﻿  "codeX-site"
+  KODA APLIKACIJE (strezi jo Node.js)
+    server.js                zagon aplikacije
+    package.json             ukazi (start, dev, test, selfcheck, seed)
+    config.example.json      vzorec nastavitev (install skript iz njega naredi config.json)
+    src/                     vsa koda (router, admin, dnevniki, shramba)
+    public/                  CSS, JS, ikona (strezena pod /assets/)
+    test/                    18 preizkusov (npm test)
+  
+  SKRIPTI ZA WINDOWS (PowerShell)
+    scripts/install-windows.ps1        NAMESTITEV: Node + config + storitev + firewall + zagon
+    scripts/update-windows.ps1         posodobitev kode (najprej kopira podatke)
+    scripts/enable-git-updates.ps1     preklop razsiritve ZIP-a na git
+    scripts/backup-windows.ps1         zunanja varnostna kopija mape data
+    scripts/watchdog.ps1               varuh: znova zazene, ce stran ne odgovarja
+    scripts/selfcheck.mjs              obiscen vse strani in akcije v casni mapi
+    scripts/seed.mjs                   vzorcni podatki za ogled admin plosce
+    scripts/run.ps1 / dev-server.ps1   rocni / razvojni zagon
+    start.bat                          hiter zagon z dvoklikom (test)
+  
+  DOKUMENTACIJA
+    NAMESTI-NA-VPS.txt                 navodila v 7 korakih (ZACNI TU)
+    README.md                          povzetek, nastavitve, struktura kode
+    docs/DEPLOY-WINDOWS-SERVER-2022.md podrobna namestitev, HTTPS (Caddy / IIS+ARR), tezave
+    docs/API.md                        povezava s FiveM streznikom (API + Lua skripta)
+    docs/web.config.example            IIS preusmeritev na Node (opcijsko)
+  
+  PODATKI NISO V TEM ZIP-u (in tudi ne na GitHubu - .gitignore)
+    config.json     nastavitve VPS-a + API token      (nastane ob namestitvi)
+    data/           igralci, prijavnice, whitelist, dnevniki, kopije   (nastane ob zagonu)
+
+--------------------------------------------------------------------------
+
+﻿CODEX COMMUNITY - NAMESTITEV NA VPS (Windows Server 2022) IZ TOG ZIP-a
+======================================================================
+
+V ZIP-u je celotna stran in baza: igralci, prijavnice, whitelist in dnevnik dogodkov (logi). Vsi podatki se hranijo lokalno na VPS-u, nic ne gre na tretje strani.
+Edini pogoj je Node.js (npm install ni potreben - ni zunanjih odvisnosti).
+
+KORAK 1 - povezava na VPS
+  Povezi se prek RDP (mstsc). Odpri "Windows PowerShell" z desnim klikom
+  -> "Run as administrator".
+
+KORAK 2 - prekopiraj kodo na VPS
+  Razsiri ZIP in celotno vsebino mape "codex-site" prekopiraj v:
+      C:\CodeX\site
+  (RDP: mapo lahko kar povleces v okno; ce ze imaš staro namestitev, NAJPREJ
+   prekopiraj staro mapo C:\CodeX\site\data sem - tam so igralci, prijavnice,
+   whitelist in dnevniki. Aplikacija mapa data ustvari sama, ce ni.)
+
+KORAK 3 - namesti Node.js (ce ga se nimas)
+      winget install OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+  Ce winget ne deluje: https://nodejs.org  (LTS, x64 .msi, pusti kljukico "Add to PATH").
+  Po namestitvi odpri NOVO okno PowerShell in preveri:  node -v
+
+KORAK 4 - zazeni namestitev
+      cd C:\CodeX\site
+      powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog
+
+  Skript:
+    - zazna, da je koda ze v mapi (ZIP) - git clone preskoci
+    - ustvari config.json (lokalne nastavitve + API token; ta datoteka NIKOLI ne gre na GitHub)
+    - registrira samodejni zagon ob zagonu Windows (storitev "CodeX-Site")
+    - odpre požarni zid (firewall) na izbranih vratih (privzeto 3000)
+    - zazene stran in na koncu IZPISE ZACETNO GESLO za admin ploso
+    - z -WithWatchdog doda varuha: vsakih 5 minut preveri, ali stran zivi, in jo ob
+      napaki znova zazene
+
+KORAK 5 - prijava v admin ploso
+      http://IP-VPS-a:3000/admin        uporabnik: admin        geslo: iz 4. koraka
+      (geslo je zapisano tudi v C:\CodeX\site\data\ADMIN-START.txt)
+
+  Takoj potem:
+    1. V Nastavitve si nastavi SVOJE geslo (vsaj 12 znakov).
+    2. Datoteko ADMIN-START.txt izbrisi:
+         Remove-Item C:\CodeX\site\data\ADMIN-START.txt
+    3. V Nastavitve uredi Discord povabilo, connect naslov in ime strani.
+    4. Ce bo whitelist potrebovala FiveM skripta: Nastavitve -> "Ustvari API token"
+       (primerek skripte je v docs\API.md).
+
+KORAK 6 - preveri, da vse dela
+      Invoke-RestMethod http://127.0.0.1:3000/api/health
+      .\scripts\selfcheck.mjs        (obiscen vse strani in akcije v cistem začasnem okolju)
+
+KORAK 7 - redno varnuj
+      .\scripts\backup-windows.ps1 -Zip        zunanja kopija (C:\CodeX\varnostne-kopije)
+
+  Vsa baza je mapa C:\CodeX\site\data (navadni JSON - lahko jo odpreš v Notepadu).
+  Aplikacija sama dela stisnjene kopije vsakih 6 ur v data\backups (hrani 14 dni).
+  Kar ni shranjeno izven VPS-a, ni varnostna kopija.
+
+KAJ NAPREJ
+      .\scripts\enable-git-updates.ps1     preklop mape na git -> posodobitve z enim ukazom
+      .\scripts\update-windows.ps1          posodobitev kode (najprej kopira podatke)
+      Restart-ScheduledTask -TaskName CodeX-Site          ponovni zagon strani
+      Get-ScheduledTaskInfo -TaskName CodeX-Site           zadnji zagon in koda napake
+      Get-Content C:\CodeX\site\data\logs\events.jsonl -Tail 30    zadnji dogodki
+      .\scripts\uninstall-windows.ps1      odstrani storitev in pravilo požarnega zidu
+                                          (mapa data OSTANE - podatki se ne izbrisijo)
+
+HTTPS (priporoceno, da brskalnik ne blokira piškotkov in gesla ne potujejo v navadnem
+besedilu): Caddy ali IIS + URL Rewrite/ARR. Navodila korak za korakom:
+docs\DEPLOY-WINDOWS-SERVER-2022.md. Povzetek in struktura kode: README.md.
+
+ZASEBNOST
+  V ZIP-u NAMERNO ni config.json in ni mape data - tam so gesla in osebni podatki
+  igralcev, ki smejo bit samo na VPS-u. Ce bi karkoli od tega nakljucno pridal na
+  GitHub, takoj zamenjaj gesla in API token.

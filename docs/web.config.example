@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  IIS pomocnik: shranite kot C:\CodeX\site\web.config, ce streznik streze to mapo
+  in zelite, da IIS preusmeri vse na Node (port 3000).
+  Predpogoj: URL Rewrite + ARR 3.0 (Enable proxy v ARR).
+  Ce IIS ne strezi te mape, ta datoteka ni potrebna - obrni cez Caddy ali nginx.
+-->
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <clear />
+        <rule name="Codex-Node-Reverse-Proxy" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions>
+            <!-- staticne datoteke pusti IIS-u, vse ostalo gre na Node -->
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="http://localhost:3000/{R:1}" appendQueryString="true" />
+          <serverVariables>
+            <set name="HTTP_X_FORWARDED_PROTO" value="{HTTPS}" />
+            <set name="HTTP_X_FORWARDED_HOST" value="{HTTP_HOST}" />
+          </serverVariables>
+        </rule>
+      </rules>
+    </rewrite>
+    <httpErrors existingResponse="PassThrough" />
+    <security>
+      <requestFiltering>
+        <requestLimits maxAllowedContentLength="262144" />
+      </requestFiltering>
+    </security>
+  </system.webServer>
+  <location path="data" allowOverride="false">
+    <system.webServer>
+      <!-- baza (igralci, prijavnice, dnevniki) NE sme biti javno dostopna -->
+      <security>
+        <requestFiltering>
+          <fileExtensions allowUnlisted="true">
+            <add fileExtension=".json" allowed="false" />
+            <add fileExtension=".jsonl" allowed="false" />
+            <add fileExtension=".gz" allowed="false" />
+          </fileExtensions>
+        </requestFiltering>
+        <authentication>
+          <anonymousAuthentication enabled="false" />
+        </authentication>
+      </security>
+    </system.webServer>
+  </location>
+</configuration>
