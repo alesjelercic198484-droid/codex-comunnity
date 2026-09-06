@@ -113,7 +113,17 @@ if (Test-Path (Join-Path $InstallDir '.git')) {
 }
 
 $server = Join-Path $InstallDir 'server.js'
-if (-not (Test-Path $server)) { throw "server.js ni v $InstallDir - namestitev ni mozna." }
+if (-not (Test-Path $server)) {
+  Write-Host ''
+  Write-Host "    V $InstallDir ni datoteke server.js - izbrana veja '$Branch' se zdi prazna (tam je samo stara predloga index.html)." -ForegroundColor Red
+  if ($git) {
+    Write-Host '    Razpolozljive veje na GitHubu:' -ForegroundColor Yellow
+    Push-Location $InstallDir; git branch -r 2>&1 | ForEach-Object { Write-Host "      $_" -ForegroundColor Gray }; Pop-Location
+    Write-Host "    Ponovi z ustrezno vejo, npr.:" -ForegroundColor Yellow
+    Write-Host "      .\scripts\install-windows.ps1 -Branch 'arena/01a0756b-codex-comunnity'" -ForegroundColor White
+  }
+  throw 'namestitev ustavljena: koda aplikacije ni na najdeni veji.'
+}
 
 # --- 3. config.json --------------------------------------------------------
 Write-Step 'Nastavitve (config.json)'

@@ -8,8 +8,13 @@ dostop do Microsoftovega Wingeta ali prenosa datotek, ti pa si skrbnik (Administ
 ```powershell
 git clone https://github.com/alesjelercic198484-droid/codex-comunnity.git C:\CodeX\site
 cd C:\CodeX\site
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog -Branch 'arena/01a0756b-codex-comunnity'
 ```
+
+> **Opomba o veji:** koda je bila narejena na veji `arena/01a0756b-codex-comunnity`.
+> Dokler je ne združiš v `main`, namestitev zahteva `-Branch`:
+> `... install-windows.ps1 -Branch 'arena/01a0756b-codex-comunnity'`
+> (skript ti to pove in našteje razpoložljive veje, če `server.js` ni najden).
 
 Vse spodaj je razčlenjeno, da veš, kaj se dogaja in kaj preveriti, ko kaj ne dela.
 
@@ -40,8 +45,7 @@ Vse spodaj je razčlenjeno, da veš, kaj se dogaja in kaj preveriti, ko kaj ne d
 ```powershell
 git clone https://github.com/alesjelercic198484-droid/codex-comunnity.git C:\CodeX\site
 cd C:\CodeX\site
-git checkout main            # ali vejo, ki ji zaupaš
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog -Branch 'arena/01a0756b-codex-comunnity'
 ```
 
 `install-windows.ps1` naredi:

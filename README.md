@@ -40,7 +40,8 @@ Povzetek; korak za korakom (tudi HTTPS, IIS, Caddy, selitev) je v
 # 2) en skript naredi vse: Node, git clone, config.json, samodejni zagon, firewall, test
 git clone https://github.com/alesjelercic198484-droid/codex-comunnity.git C:\CodeX\site
 cd C:\CodeX\site
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog \
+  -Branch 'arena/01a0756b-codex-comunnity'     # izpusti, ce je koda ze zdruzena v main
 ```
 
 Skript na koncu **izpiše začetno geslo** za `http://IP-VPS-a:3000/admin`
