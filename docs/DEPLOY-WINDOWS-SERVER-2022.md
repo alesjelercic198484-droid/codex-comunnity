@@ -20,6 +20,18 @@ Vse spodaj je razčlenjeno, da veš, kaj se dogaja in kaj preveriti, ko kaj ne d
 
 ---
 
+## 0. Namestitev iz ZIP-a (brez Gita)
+
+Če na VPS-u nočeš imeta Gita ali nimaš dostopa do GitHuba:
+
+1. Razširi ZIP in celotno vsebino mape prekopiraj v `C:\CodeX\site`.
+2. Zaženi `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1 -WithWatchdog`
+   iz te mape. Skript zazna, da koda že leži tam (mapa brez `.git`) in namestitev naredi
+   na tem mestu; `git clone` preskoči.
+3. Če boš kasneje hotel posodabljati z enim ukazom, preklopi mapo na git:
+   `.\scripts\enable-git-updates.ps1` (varnostno kopira `data/` in `config.json`, nato
+   `git init` + `fetch` + `reset`).
+
 ## 1. Priprava VPS-a
 
 1. Poveži se prek RDP (mstsc) ali prek ponudnikovega konzolnega omrežja.

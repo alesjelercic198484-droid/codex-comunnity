@@ -44,6 +44,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps
   -Branch 'arena/01a0756b-codex-comunnity'     # izpusti, ce je koda ze zdruzena v main
 ```
 
+Brez Gita? **ZIP deluje enako:** razširi mapo v `C:\CodeX\site` in zaženi
+`scripts\install-windows.ps1` (skript sam zazna, da koda že leži v mapi, in preskoči
+`git clone`). Za posodobitve potem uporabi `scripts\enable-git-updates.ps1` (preklop na git,
+podatki ostanejo) ali prekopiraj novo vsebino ZIP-a čez staro mapo — **`data/` ne briši**.
+
 Skript na koncu **izpiše začetno geslo** za `http://IP-VPS-a:3000/admin`
 (prijavi se, stran takoj zahteva nastavitev lastnega gesla, nato **izbriši `data\ADMIN-START.txt`**).
 

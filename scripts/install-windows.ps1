@@ -87,6 +87,17 @@ if (-not $SkipNode) {
 $git = Get-Command git -ErrorAction SilentlyContinue
 
 # --- 2. koda projekta ------------------------------------------------------
+# Ce je bil projekt razsirjen iz ZIP-a (mapa brez .git, a s server.js) in ciljna mapa
+# ne obstaja, namescimo kar na tem mestu - ni potrebe po git clone.
+$fromZip = $false
+if (-not $PSBoundParameters.ContainsKey('InstallDir') `
+    -and -not (Test-Path (Join-Path $InstallDir 'server.js')) `
+    -and (Test-Path (Join-Path $root 'server.js'))) {
+  Write-Warn2 "ciljna mapa $InstallDir ne obstaja, skript pa tece iz mape s kodo - namestim kar tukaj ($root)."
+  $InstallDir = $root
+  $fromZip = $true
+}
+
 Write-Step "Koda projekta v $InstallDir"
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $InstallDir) | Out-Null
 if (Test-Path (Join-Path $InstallDir '.git')) {
@@ -101,7 +112,12 @@ if (Test-Path (Join-Path $InstallDir '.git')) {
     Write-Warn2 'Git manjka - koda ostane kot je (za posodobitev namesti Git).'
   }
 } elseif (Test-Path (Join-Path $InstallDir 'server.js')) {
-  Write-Ok 'Mapa je ze zapolnjena (brez .git) - preskakujem clone.'
+  if ($fromZip) {
+    Write-Ok 'koda je ze tukaj (razsirjeno iz ZIP-a) - git clone ni potreben'
+    Write-Warn2 'za posodobitve z enim ukazom preklopi na git: .\scripts\enable-git-updates.ps1'
+  } else {
+    Write-Ok 'Mapa je ze zapolnjena (brez .git) - preskakujem clone.'
+  }
 } elseif ($git) {
   & git clone --depth 1 $RepoUrl $InstallDir
   if ($Branch) { Push-Location $InstallDir; & git checkout $Branch; Pop-Location }
