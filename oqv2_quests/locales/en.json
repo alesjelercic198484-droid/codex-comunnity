@@ -1,0 +1,56 @@
+{
+  "brand": "OQV2 QUESTS",
+
+  "no_permission": "You are not allowed to use this command.",
+  "panel_opened": "Admin panel opened.",
+  "panel_denied": "Access denied — administrators only.",
+
+  "mission_started": "Mission started: {name}",
+  "mission_completed": "Mission completed: {name}",
+  "mission_failed": "Mission failed: {name}",
+  "mission_abandoned": "Mission abandoned: {name}",
+  "mission_locked": "You have not unlocked this mission yet.",
+  "mission_level": "You need level {level} for this mission.",
+  "mission_cooldown": "Available again in {time}.",
+  "mission_job": "Only {job} can take this mission.",
+  "mission_gang": "Only {gang} members can take this mission.",
+  "mission_civilian": "Only civilians can take this mission.",
+  "mission_schedule": "This mission is only available between {from}:00 and {to}:00.",
+  "mission_already_active": "You already have this mission active.",
+  "mission_limit": "You are already running another mission.",
+  "mission_disabled": "This mission is currently unavailable.",
+  "mission_prereq": "Complete \"{name}\" first.",
+
+  "objective_updated": "Objective updated",
+  "objective_complete": "Objective complete: {label}",
+  "objective_all_complete": "All objectives complete — return to the giver.",
+
+  "need_items": "You are missing {count}x {item}.",
+  "need_money": "You need ${amount}.",
+  "inventory_full": "Your inventory is full.",
+  "items_removed": "Items handed over.",
+  "reward_money": "You received ${amount}.",
+  "reward_items": "You received {count}x {item}.",
+  "reward_xp": "+{amount} XP",
+
+  "level_up": "Level up! You are now level {level}.",
+  "xp_gained": "+{amount} XP",
+
+  "npc_killed": "Target eliminated ({current}/{total})",
+  "npc_looted": "Looted the body.",
+  "npc_nothing": "Nothing useful on this one.",
+  "police_alerted": "Shots fired — someone called the police.",
+
+  "location_discovered": "New location discovered: {name}",
+  "no_missions_here": "There is nothing to do here right now.",
+
+  "saved": "Saved successfully.",
+  "deleted": "Deleted successfully.",
+  "save_failed": "Save failed: {error}",
+  "validation_failed": "Validation failed",
+  "reloaded": "Data reloaded from the database.",
+
+  "too_far": "You are too far away.",
+  "rate_limited": "Slow down.",
+  "generic_error": "Something went wrong."
+}

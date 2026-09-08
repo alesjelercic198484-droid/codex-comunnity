@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OQV2 Quests — DEV PREVIEW</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body style="background:#05050a">
+
+    <!-- ══════════════ HUD: MISSION TRACKER ══════════════ -->
+    <div id="tracker" class="tracker" aria-hidden="true">
+        <div class="tracker__bar">
+            <div class="tracker__level">
+                <span class="tracker__lvl-num" id="tracker-level">1</span>
+            </div>
+            <div class="tracker__xp">
+                <div class="tracker__xp-track"><div class="tracker__xp-fill" id="tracker-xp-fill"></div></div>
+                <span class="tracker__xp-text" id="tracker-xp-text">0 / 0 XP</span>
+            </div>
+        </div>
+        <div class="tracker__card" id="tracker-card" hidden>
+            <div class="tracker__head">
+                <span class="tracker__icon" id="tracker-icon"></span>
+                <span class="tracker__title" id="tracker-title">Mission</span>
+            </div>
+            <ul class="tracker__list" id="tracker-objectives"></ul>
+        </div>
+    </div>
+
+    <!-- ══════════════ HUD: MISSION ALERT ══════════════ -->
+    <div id="alert" class="alert" aria-hidden="true">
+        <div class="alert__glow"></div>
+        <div class="alert__body">
+            <div class="alert__kicker" id="alert-kicker">NEW MISSION</div>
+            <div class="alert__title" id="alert-title"></div>
+            <div class="alert__desc" id="alert-desc"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ HUD: MISSION COMPLETE ══════════════ -->
+    <div id="complete" class="complete" aria-hidden="true">
+        <div class="complete__ring"></div>
+        <div class="complete__inner">
+            <div class="complete__kicker">MISSION COMPLETE</div>
+            <div class="complete__title" id="complete-title"></div>
+            <div class="complete__rewards" id="complete-rewards"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════ HUD: LEVEL UP ══════════════ -->
+    <div id="levelup" class="levelup" aria-hidden="true">
+        <div class="levelup__inner">
+            <span class="levelup__kicker">LEVEL UP</span>
+            <span class="levelup__num" id="levelup-num">2</span>
+        </div>
+    </div>
+
+    <!-- ══════════════ MAIN APP (admin panel / journal) ══════════════ -->
+    <div id="app" class="app" aria-hidden="true">
+        <div class="app__backdrop"></div>
+
+        <div class="shell" id="shell">
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="brand">
+                    <div class="brand__mark" id="brand-mark">OQ</div>
+                    <div class="brand__text">
+                        <span class="brand__name" id="brand-name">OQV2 QUESTS</span>
+                        <span class="brand__sub" id="brand-sub">Unlimited Mission System</span>
+                    </div>
+                </div>
+
+                <nav class="nav" id="nav"></nav>
+
+                <div class="sidebar__foot">
+                    <div class="sidebar__author">
+                        <span class="sidebar__author-label">Author</span>
+                        <span class="sidebar__author-name" id="brand-author">Codex Dev: #Alesh48 5654</span>
+                    </div>
+                    <div class="sidebar__made" id="brand-footer">Made with CodeX Dev.</div>
+                    <div class="sidebar__ver" id="brand-version">v2.0.0</div>
+                </div>
+            </aside>
+
+            <!-- MAIN -->
+            <section class="main">
+                <header class="topbar">
+                    <div class="topbar__titles">
+                        <h1 class="topbar__title" id="page-title">Dashboard</h1>
+                        <p class="topbar__sub" id="page-sub">Live overview of your mission network</p>
+                    </div>
+                    <div class="topbar__tools" id="page-tools"></div>
+                    <button class="icon-btn icon-btn--close" data-action="close" title="Close (ESC)">
+                        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                    </button>
+                </header>
+
+                <div class="content" id="content"></div>
+            </section>
+        </div>
+
+        <!-- MODAL / DRAWER -->
+        <div class="modal" id="modal" aria-hidden="true">
+            <div class="modal__backdrop" data-action="modal-close"></div>
+            <div class="modal__box" id="modal-box">
+                <header class="modal__head">
+                    <div>
+                        <h2 id="modal-title">Editor</h2>
+                        <p id="modal-sub"></p>
+                    </div>
+                    <button class="icon-btn" data-action="modal-close">
+                        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                    </button>
+                </header>
+                <div class="modal__tabs" id="modal-tabs"></div>
+                <div class="modal__body" id="modal-body"></div>
+                <footer class="modal__foot" id="modal-foot"></footer>
+            </div>
+        </div>
+
+        <!-- CONFIRM -->
+        <div class="confirm" id="confirm" aria-hidden="true">
+            <div class="confirm__box">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <p id="confirm-text"></p>
+                <div class="confirm__actions">
+                    <button class="btn btn--ghost" data-action="confirm-no">Cancel</button>
+                    <button class="btn btn--danger" data-action="confirm-yes">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOASTS -->
+        <div class="toasts" id="toasts"></div>
+
+        <!-- SUSPENDED OVERLAY (while picking coords in-game) -->
+        <div class="suspend" id="suspend" aria-hidden="true">
+            <div class="suspend__inner">
+                <div class="suspend__spinner"></div>
+                <p>Waiting for in-game input…</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="dev/mock.js"></script>
+    <script src="assets/js/icons.js"></script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/hud.js"></script>
+    <script src="assets/js/admin.js"></script>
+    <script src="assets/js/editors.js"></script>
+    <script src="assets/js/journal.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

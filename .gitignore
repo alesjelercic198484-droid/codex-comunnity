@@ -1,0 +1,8 @@
+# tooling scratch — not part of the resource
+node_modules/
+package-lock.json
+
+# reference material & build artifacts
+image-search/
+dist/
+*.zip
