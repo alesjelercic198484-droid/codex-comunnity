@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-const WEB = path.join(__dirname, '..', 'oqv2_quests', 'web');
+const WEB = path.join(require('./resource-path').resolveResource(process.argv[2]), 'web');
 const errors = [];
 const results = [];
 let failures = 0;

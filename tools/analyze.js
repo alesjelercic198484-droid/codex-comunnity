@@ -1,6 +1,6 @@
 /* OQV2 static analyzer: cross-file symbol + event-name consistency */
 const fs=require('fs'),path=require('path'),luaparse=require('luaparse');
-const root='oqv2_quests';
+const root=require('./resource-path').resolveResource(process.argv[2]);
 let files=[];(function w(d){for(const f of fs.readdirSync(d)){const p=path.join(d,f);
  fs.statSync(p).isDirectory()?w(p):f.endsWith('.lua')&&files.push(p);}})(root);
 

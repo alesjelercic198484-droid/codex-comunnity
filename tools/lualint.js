@@ -1,6 +1,7 @@
 const fs = require('fs'), path = require('path');
 const luaparse = require('luaparse');
-const root = process.argv[2] || 'oqv2_quests';
+const { resolveResource } = require('./resource-path');
+const root = resolveResource(process.argv[2]);
 let files = [];
 (function walk(d){ for (const f of fs.readdirSync(d)) { const p = path.join(d,f); const s = fs.statSync(p);
   if (s.isDirectory()) walk(p); else if (f.endsWith('.lua')) files.push(p); } })(root);

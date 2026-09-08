@@ -5,8 +5,8 @@ const { lua, lauxlib, lualib, to_luastring } = require('fengari');
 const L = lauxlib.luaL_newstate();
 lualib.luaL_openlibs(L);
 
-const ROOT = path.join(__dirname, '..');
-const RES  = path.join(ROOT, 'oqv2_quests');
+const RES  = require('./resource-path').resolveResource(process.argv[2]);
+const ROOT = path.dirname(RES);
 
 function run(file, label) {
   const src = fs.readFileSync(file, 'utf8');
