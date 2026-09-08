@@ -1,0 +1,56 @@
+{
+  "brand": "OQV2 QUESTS",
+
+  "no_permission": "No tienes permiso para usar este comando.",
+  "panel_opened": "Panel de administración abierto.",
+  "panel_denied": "Acceso denegado — solo administradores.",
+
+  "mission_started": "Misión iniciada: {name}",
+  "mission_completed": "Misión completada: {name}",
+  "mission_failed": "Misión fallida: {name}",
+  "mission_abandoned": "Misión abandonada: {name}",
+  "mission_locked": "Todavía no has desbloqueado esta misión.",
+  "mission_level": "Necesitas el nivel {level} para esta misión.",
+  "mission_cooldown": "Disponible de nuevo en {time}.",
+  "mission_job": "Solo {job} puede aceptar esta misión.",
+  "mission_gang": "Solo los miembros de {gang} pueden aceptar esta misión.",
+  "mission_civilian": "Solo los civiles pueden aceptar esta misión.",
+  "mission_schedule": "Esta misión solo está disponible entre las {from}:00 y las {to}:00.",
+  "mission_already_active": "Ya tienes esta misión activa.",
+  "mission_limit": "Ya estás realizando otra misión.",
+  "mission_disabled": "Esta misión no está disponible.",
+  "mission_prereq": "Completa \"{name}\" primero.",
+
+  "objective_updated": "Objetivo actualizado",
+  "objective_complete": "Objetivo completado: {label}",
+  "objective_all_complete": "Objetivos completados — vuelve con el contacto.",
+
+  "need_items": "Te faltan {count}x {item}.",
+  "need_money": "Necesitas ${amount}.",
+  "inventory_full": "Tu inventario está lleno.",
+  "items_removed": "Objetos entregados.",
+  "reward_money": "Has recibido ${amount}.",
+  "reward_items": "Has recibido {count}x {item}.",
+  "reward_xp": "+{amount} XP",
+
+  "level_up": "¡Subiste de nivel! Ahora eres nivel {level}.",
+  "xp_gained": "+{amount} XP",
+
+  "npc_killed": "Objetivo eliminado ({current}/{total})",
+  "npc_looted": "Has saqueado el cuerpo.",
+  "npc_nothing": "No lleva nada útil.",
+  "police_alerted": "Disparos — alguien ha llamado a la policía.",
+
+  "location_discovered": "Nueva ubicación descubierta: {name}",
+  "no_missions_here": "Aquí no hay nada que hacer ahora mismo.",
+
+  "saved": "Guardado correctamente.",
+  "deleted": "Eliminado correctamente.",
+  "save_failed": "Error al guardar: {error}",
+  "validation_failed": "Validación fallida",
+  "reloaded": "Datos recargados desde la base de datos.",
+
+  "too_far": "Estás demasiado lejos.",
+  "rate_limited": "Más despacio.",
+  "generic_error": "Algo ha salido mal."
+}
