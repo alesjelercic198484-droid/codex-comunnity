@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeX Daily Missions</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="hidden">
+    <main class="tablet" aria-label="Daily Missions panel">
+        <section class="hero">
+            <div>
+                <p class="eyebrow">CodeX Community</p>
+                <h1 id="title">Daily Missions</h1>
+                <p id="subtitle">Stay online, complete tasks, and claim your rewards.</p>
+            </div>
+            <div class="hero-actions">
+                <button class="icon-button" id="refresh" title="Refresh">↻</button>
+                <button class="icon-button close" id="close" title="Close">×</button>
+            </div>
+        </section>
+
+        <section class="stats" id="stats"></section>
+
+        <nav class="tabs" aria-label="Mission tabs">
+            <button class="tab active" data-tab="current">Today <span id="todayBadge">0</span></button>
+            <button class="tab" data-tab="legacy">Unclaimed <span id="legacyBadge">0</span></button>
+        </nav>
+
+        <section class="mission-grid" id="missionGrid"></section>
+        <section class="empty hidden" id="emptyState">
+            <div class="empty-icon">✓</div>
+            <h2>Nothing to show here</h2>
+            <p>Complete missions and unclaimed rewards will appear in this panel.</p>
+        </section>
+    </main>
+
+    <div class="toast hidden" id="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
