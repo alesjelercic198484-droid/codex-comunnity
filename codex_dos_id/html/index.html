@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DoS Secret Services ID</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="hidden">
+    <div class="wrap" id="wrap">
+        <div class="card" id="card">
+            <div class="card-top">
+                <div class="seal">
+                    <img src="images/seal.png" alt="Seal" />
+                </div>
+                <div class="agency-text">
+                    <p class="agency" id="agency">DEPARTMENT OF DEFENSE</p>
+                    <p class="division" id="division">SECRET SERVICES</p>
+                </div>
+                <div class="chip"></div>
+            </div>
+
+            <div class="card-body">
+                <div class="photo">
+                    <div class="photo-inner">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12Zm0 2.4c-3.6 0-9.6 1.8-9.6 5.4v2h19.2v-2c0-3.6-6-5.4-9.6-5.4Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="photo-tag">FEDERAL AGENT</div>
+                </div>
+
+                <div class="fields">
+                    <div class="field">
+                        <span class="label">First Name</span>
+                        <span class="value" id="firstName">—</span>
+                    </div>
+                    <div class="field">
+                        <span class="label">Last Name</span>
+                        <span class="value" id="lastName">—</span>
+                    </div>
+                    <div class="field">
+                        <span class="label">Position</span>
+                        <span class="value" id="job">—</span>
+                    </div>
+                    <div class="field" id="gradeField">
+                        <span class="label">Clearance / Grade</span>
+                        <span class="value" id="grade">—</span>
+                    </div>
+                    <div class="field">
+                        <span class="label">Credential No.</span>
+                        <span class="value mono" id="idNumber">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-bottom">
+                <div class="barcode">
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <p class="footer-text" id="footerText">
+                    This credential certifies that the bearer is an active federal agent authorized under national security statutes.
+                </p>
+            </div>
+
+            <div class="watermark">TOP SECRET</div>
+        </div>
+
+        <button class="close-btn" id="closeBtn" title="Close">Close (ESC)</button>
+        <p class="hint" id="presentedHint">ID card presented to you</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
