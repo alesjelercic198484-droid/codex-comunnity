@@ -15,7 +15,8 @@ A server-authoritative ESX government resource built for **ox_inventory**, **ox_
   | 4 | `secret service` | Secret Services |
   | 5 | `us marshal` | US Marshal |
 
-- Grade-secured ox_inventory armory at City Hall, opened through ox_target.
+- Job-secured ox_inventory armory at City Hall, opened through ox_target.
+- Every `gouv` rank can use every configured police/p_policejob armory item by default (`AllowAllItemsForGovernment = true`).
 - Armory includes all items listed in the official p_policejob armory configuration plus flashlight, nightstick, taser, pistol, shotgun, rifle, and ammunition.
 - Live, flashing police and EMS blips visible **only** to `gouv` players.
 - Professional Government ID NUI with no player photograph.
@@ -34,6 +35,48 @@ A server-authoritative ESX government resource built for **ox_inventory**, **ox_
 - `ox_target`
 - OneSync (required for secure server-side distance and emergency-unit coordinates)
 - Optional but supported: `p_policejob` and its dependencies
+
+## Important: allowing `gouv` to use every police item
+
+Three permissions are involved because ox_inventory, p_policejob, and this resource each have their own configuration. Configure **all three**:
+
+### A. `server.cfg` — ox_inventory police group
+
+This line must appear **before** `ensure ox_inventory`:
+
+```cfg
+setr inventory:police ["police", "sheriff", "gouv"]
+```
+
+Keep all of your existing police-type jobs in the JSON array. This makes ox_inventory treat `gouv` as a police-capable group for its built-in restricted inventory features.
+
+### B. `p_policejob/shared/config.lua` — p_policejob authorization
+
+At minimum, add this after `Config.Jobs` is defined:
+
+```lua
+Config.Jobs['gouv'] = 0
+```
+
+To enable its shops, outfits, station features, alerts, and radio channels too, paste the complete supplied snippet at the **end** of `p_policejob/shared/config.lua`:
+
+```text
+codex_government/install/p_policejob_config.lua
+```
+
+This step is necessary because `p_policejob` is a separate resource with its own private permission checks. A `server.cfg` convar cannot rewrite that resource's Lua `Config.Jobs` table.
+
+### C. `codex_government/config.lua` — all armory items for every rank
+
+The package ships with:
+
+```lua
+Config.Armory.AllowAllItemsForGovernment = true
+```
+
+When `true`, the registered City Hall shop changes every configured item's minimum grade to `0`. Judge, Prosecutor, Governor, President, Secret Services, and US Marshal can therefore all obtain every configured police item. Set it to `false` only if you want the individual grade requirements in `Config.Armory.Items` to apply.
+
+These permissions authorize the job. The matching p_policejob item definitions must still exist in `ox_inventory/data/items.lua`, as explained below.
 
 ## Installation
 
@@ -91,7 +134,7 @@ stick_bag, stick, body_cam, gps, camera, radio, handcuffs,
 vest_normal, vest_strong
 ```
 
-It also includes standard ox_inventory weapon/ammo entries. Install the item definitions from `p_policejob/INSTALL/ITEMS` as required by p_policejob's own installation guide. This resource checks every armory item at startup: an unregistered item is safely skipped and printed in the server console instead of crashing the armory.
+It also includes standard ox_inventory weapon/ammo entries. Install the item definitions from `p_policejob/INSTALL/ITEMS` as required by p_policejob's own installation guide. **Use p_policejob's official definitions**, because they contain the item callbacks/exports that make equipment functional; a label-only item with the same name is not enough. This resource checks every armory item at startup: an unregistered item is safely skipped and printed in the server console instead of crashing the armory.
 
 ### 5. Configure p_policejob access and cuff protection
 
@@ -117,31 +160,48 @@ TriggerEvent('codex_government:client:protectedSoftCuff')
 
 The wrappers use the exported protection check before p_policejob starts cuffing. The included safety net is a fallback, not a substitute for guarding the external resource's call site.
 
-### 6. Configure ox_inventory police jobs
+### 6. Configure `server.cfg`
 
-Before `ensure ox_inventory` in `server.cfg`, merge `gouv` into the inventory police-job list:
+A complete merge example is supplied at:
 
-```cfg
-setr inventory:police ["police", "gouv"]
+```text
+codex_government/install/server.cfg.example
 ```
 
-Keep any additional police/sheriff jobs already used by your server.
-
-### 7. Start resources in order
-
-Example:
+Copy the relevant lines into your real `server.cfg`. The important rule is that all `inventory:*` convars must be declared before ox_inventory starts:
 
 ```cfg
+# These must be above `ensure ox_inventory`.
+setr inventory:framework "esx"
+setr inventory:target true
+setr inventory:police ["police", "sheriff", "gouv"]
+
+# Dependencies and framework.
+ensure oxmysql
 ensure ox_lib
 ensure es_extended
 ensure ox_target
 ensure ox_inventory
+
+# p_policejob dependencies — omit these if you do not own/use it.
 ensure p_bridge
 ensure p_policejob
+
+# Government resource starts last.
 ensure codex_government
 ```
 
-Only include `p_bridge` / `p_policejob` if installed.
+Do not create a second `inventory:police` line if one already exists. Edit the existing JSON array and append `"gouv"`. Keep sheriff/state police and every other job your server already uses.
+
+### 7. Confirm the all-items option
+
+Open `codex_government/config.lua` and leave this enabled:
+
+```lua
+Config.Armory.AllowAllItemsForGovernment = true
+```
+
+Restart the server after changing ox_inventory items or job data. Restarting only `codex_government` is sufficient after ordinary armory coordinate/config changes, provided ox_inventory already knows every item.
 
 ### 8. Give the item
 
@@ -163,15 +223,21 @@ vector3(-545.38, -204.03, 38.22)
 
 This is a generic City Hall exterior coordinate. Every City Hall MLO has a different interior. Change `Config.Armory.Coords`, `Size`, and `Rotation` in `config.lua` to match yours.
 
-Default grade access:
+Default access is **all configured items for all `gouv` grades**, because:
 
-- Grade 0: p_policejob field equipment, radio, ID tools, flashlight, normal vest
+```lua
+Config.Armory.AllowAllItemsForGovernment = true
+```
+
+If you change that option to `false`, these configured minimum grades apply:
+
+- Grade 0: p_policejob field equipment, Government ID, radio, flashlight, normal vest
 - Grade 1: nightstick, stun gun, 9mm ammo
 - Grade 2: strong vest, combat pistol
 - Grade 4: pump shotgun and shotgun ammo
 - Grade 5: carbine rifle and rifle ammo
 
-All items/prices/grades are editable in `Config.Armory.Items`. The ox_inventory shop independently enforces `gouv` access on the server; the ox_target group is not the only security check.
+All items, prices, and optional grades are editable in `Config.Armory.Items`. The ox_inventory shop independently enforces the `gouv` job on the server; the ox_target group is not the only security check.
 
 ## Emergency blips
 
@@ -221,6 +287,17 @@ exports['codex_government']:ReportCuffAttempt(attackerServerId, targetServerId)
 The server validates that the attacker has a configured police job, the target is currently `gouv`, and both players are within range before applying any penalty. A client cannot tase another player by sending arbitrary IDs.
 
 ## Troubleshooting
+
+### `gouv` can take an item but cannot use its p_policejob action
+
+Confirm all four points:
+
+1. `setr inventory:police ["police", "sheriff", "gouv"]` is above `ensure ox_inventory`.
+2. `Config.Jobs['gouv'] = 0` was added after `Config.Jobs` is created in `p_policejob/shared/config.lua`.
+3. The official item entry from `p_policejob/INSTALL/ITEMS` is present in `ox_inventory/data/items.lua`.
+4. ox_inventory, p_policejob, and codex_government were restarted after editing.
+
+The `server.cfg` line controls ox_inventory. The `Config.Jobs` line controls p_policejob. Both are required; neither can replace the other.
 
 ### Armory item missing
 

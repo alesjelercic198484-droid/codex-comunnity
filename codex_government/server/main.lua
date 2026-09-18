@@ -287,7 +287,23 @@ local function registerArmory()
         end)
 
         if ok and item then
-            inventory[#inventory + 1] = configuredItem
+            local shopItem = {}
+            for key, value in pairs(configuredItem) do
+                if key == 'metadata' and type(value) == 'table' then
+                    shopItem.metadata = {}
+                    for metadataKey, metadataValue in pairs(value) do
+                        shopItem.metadata[metadataKey] = metadataValue
+                    end
+                else
+                    shopItem[key] = value
+                end
+            end
+
+            if Config.Armory.AllowAllItemsForGovernment then
+                shopItem.grade = 0
+            end
+
+            inventory[#inventory + 1] = shopItem
         else
             skipped[#skipped + 1] = configuredItem.name
         end

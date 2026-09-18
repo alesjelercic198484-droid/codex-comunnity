@@ -27,6 +27,10 @@ Config.Armory = {
     DrawTargetSprite = true,
     DebugZone = false,
 
+    -- true: every gouv rank (grade 0+) can obtain every configured police item.
+    -- false: the individual `grade` values in Items are enforced.
+    AllowAllItemsForGovernment = true,
+
     -- All official p_policejob armory items plus a full standard loadout.
     -- Items that are not registered in ox_inventory are skipped safely and
     -- listed in the server console instead of breaking the whole shop.

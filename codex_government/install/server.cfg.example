@@ -1,0 +1,36 @@
+# ================================================================
+# codex_government - COPY/MERGE EXAMPLE
+# Do not blindly remove your existing jobs or resource lines.
+# Keep all `setr inventory:*` lines BEFORE `ensure ox_inventory`.
+# ================================================================
+
+# ox_inventory must use ESX and must treat gouv as a police-capable job.
+# Keep sheriff and any other existing emergency jobs in this JSON array.
+setr inventory:framework "esx"
+setr inventory:target true
+setr inventory:police ["police", "sheriff", "gouv"]
+
+# Recommended dependency order. oxmysql is normally required by ESX and
+# p_policejob, although codex_government itself does not run database queries.
+ensure oxmysql
+ensure ox_lib
+ensure es_extended
+ensure ox_target
+ensure ox_inventory
+
+# Only keep these two lines if p_policejob is installed.
+ensure p_bridge
+ensure p_policejob
+
+# Start this resource after ESX, ox_inventory, ox_target and p_policejob.
+ensure codex_government
+
+# ================================================================
+# IMPORTANT
+# The inventory:police line enables ox_inventory's police-group features for
+# gouv. It cannot change p_policejob's private Config table. You must ALSO add:
+#
+#   Config.Jobs['gouv'] = 0
+#
+# to p_policejob/shared/config.lua and follow P_POLICEJOB_INTEGRATION.md.
+# ================================================================
