@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src https://*;">
+    <title>Government Identification</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main id="overlay" class="overlay is-hidden" aria-hidden="true">
+        <article id="credential" class="credential" aria-label="Official government credential">
+            <div class="security-grid" aria-hidden="true"></div>
+            <div class="gold-edge" aria-hidden="true"></div>
+
+            <header class="card-header">
+                <div class="seal-wrap">
+                    <img src="images/seal.svg" alt="Government seal" class="seal">
+                </div>
+                <div class="agency-copy">
+                    <p id="authority" class="authority">CITY OF LOS SANTOS</p>
+                    <h1 id="agency">UNITED STATES GOVERNMENT</h1>
+                    <p id="department" class="department">EXECUTIVE &amp; JUDICIAL AUTHORITY</p>
+                </div>
+                <div class="chip" aria-label="Secure credential chip">
+                    <i></i><i></i><i></i><i></i>
+                </div>
+            </header>
+
+            <div class="classification">
+                <span>OFFICIAL CREDENTIAL</span>
+                <span>GOVERNMENT ACCESS</span>
+            </div>
+
+            <section class="identity">
+                <div class="primary-data">
+                    <p class="field-label">AUTHORIZED OFFICIAL</p>
+                    <p id="fullName" class="official-name">JOHN WINTERS</p>
+
+                    <div class="data-grid">
+                        <div class="data-field rank-field">
+                            <span class="field-label">OFFICE / RANK</span>
+                            <strong id="rank">SECRET SERVICES</strong>
+                        </div>
+                        <div class="data-field">
+                            <span class="field-label">CREDENTIAL NUMBER</span>
+                            <strong id="credentialNumber" class="mono">GOV-193042</strong>
+                        </div>
+                        <div class="data-field">
+                            <span class="field-label">STATUS</span>
+                            <strong class="active-status"><b></b> ACTIVE</strong>
+                        </div>
+                        <div class="data-field">
+                            <span class="field-label">VALIDITY</span>
+                            <strong>WHILE APPOINTED</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="seal-panel" aria-hidden="true">
+                    <img src="images/seal.svg" alt="">
+                    <span>GOV</span>
+                </aside>
+            </section>
+
+            <div class="barcode" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <footer class="card-footer">
+                <p id="footerText">This credential identifies an authorized government official. Tampering, duplication, or unauthorized possession is prohibited.</p>
+                <span class="signature">OFFICIAL USE</span>
+            </footer>
+
+            <button id="closeButton" class="close-button" type="button" aria-label="Close identification">×</button>
+            <p id="presentedHint" class="presented-hint">GOVERNMENT IDENTIFICATION PRESENTED TO YOU</p>
+        </article>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
