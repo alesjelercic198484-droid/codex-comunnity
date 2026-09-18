@@ -18,6 +18,7 @@ A server-authoritative ESX government resource built for **ox_inventory**, **ox_
 - Job-secured ox_inventory armory at City Hall, opened through ox_target.
 - Every `gouv` rank can use every configured police/p_policejob armory item by default (`AllowAllItemsForGovernment = true`).
 - Armory includes all items listed in the official p_policejob armory configuration plus flashlight, nightstick, taser, pistol, shotgun, rifle, and ammunition.
+- Every government firearm receives a unique server-generated `GOV-` serial number; matching guns already held by `gouv` are updated automatically.
 - Live, flashing police and EMS blips visible **only** to `gouv` players.
 - Professional Government ID NUI with no player photograph.
 - ID can be used from ox_inventory to show every nearby player, or presented to one player through ox_target.
@@ -238,6 +239,40 @@ If you change that option to `false`, these configured minimum grades apply:
 - Grade 5: carbine rifle and rifle ammo
 
 All items, prices, and optional grades are editable in `Config.Armory.Items`. The ox_inventory shop independently enforces the `gouv` job on the server; the ox_target group is not the only security check.
+
+## Government weapon serial numbers
+
+Weapon serial generation is enabled by default:
+
+```lua
+Config.WeaponSerials = {
+    Enabled = true,
+    Prefix = 'GOV',
+    UpdateExistingGovernmentWeapons = true,
+    ExcludedItems = {
+        WEAPON_FLASHLIGHT = true,
+        WEAPON_NIGHTSTICK = true
+    }
+}
+```
+
+Every gun issued by the City Hall armory gets a unique server-generated serial in this format:
+
+```text
+GOV-69BC1234-25A7F2
+```
+
+The serial is generated inside an ox_inventory `createItem` server hook. The City Hall shop sends a private one-use marker, and the hook also recognizes matching configured firearm types created directly in a current `gouv` player's inventory by another shop or server resource. Clients never provide the final number. The ordinary ox_inventory weapon metadata (`durability`, `ammo`, `components`, and registered owner) is preserved.
+
+With `UpdateExistingGovernmentWeapons = true`, the resource also checks matching firearm types already carried by a current `gouv` player:
+
+- when this resource starts;
+- when the player loads;
+- when their ESX job changes to `gouv`.
+
+Any matching gun without the configured prefix receives a new unique `GOV-` serial. Weapons that already start with `GOV-` keep their number. Flashlights and nightsticks are excluded because they are equipment rather than guns. Add another weapon name to `ExcludedItems` if it should not receive a government serial.
+
+A government-issued weapon keeps its `GOV-` serial if it is later stored, dropped, or transferred. ox_inventory displays the serial through its standard weapon metadata UI.
 
 ## Emergency blips
 

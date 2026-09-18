@@ -53,12 +53,31 @@ Config.Armory = {
         { name = 'ammo-shotgun',          price = 0, grade = 4 },
         { name = 'ammo-rifle',            price = 0, grade = 5 },
         { name = 'WEAPON_FLASHLIGHT',     price = 0, grade = 0 },
-        { name = 'WEAPON_NIGHTSTICK',     price = 0, grade = 1, metadata = { registered = true, serial = 'GOV' } },
-        { name = 'WEAPON_STUNGUN',        price = 0, grade = 1, metadata = { registered = true, serial = 'GOV' } },
-        { name = 'WEAPON_COMBATPISTOL',   price = 0, grade = 2, metadata = { registered = true, serial = 'GOV' } },
-        { name = 'WEAPON_PUMPSHOTGUN',    price = 0, grade = 4, metadata = { registered = true, serial = 'GOV' } },
-        { name = 'WEAPON_CARBINERIFLE',   price = 0, grade = 5, metadata = { registered = true, serial = 'GOV' } }
+        { name = 'WEAPON_NIGHTSTICK',     price = 0, grade = 1, metadata = { registered = true } },
+        { name = 'WEAPON_STUNGUN',        price = 0, grade = 1, metadata = { registered = true } },
+        { name = 'WEAPON_COMBATPISTOL',   price = 0, grade = 2, metadata = { registered = true } },
+        { name = 'WEAPON_PUMPSHOTGUN',    price = 0, grade = 4, metadata = { registered = true } },
+        { name = 'WEAPON_CARBINERIFLE',   price = 0, grade = 5, metadata = { registered = true } }
     }
+}
+
+Config.WeaponSerials = {
+    Enabled = true,
+    Prefix = 'GOV',
+
+    -- Every weapon issued by the City Hall armory receives a unique serial in
+    -- the form GOV-XXXXXXXX-XXXXXX. Non-gun equipment is excluded below.
+    ExcludedItems = {
+        WEAPON_FLASHLIGHT = true,
+        WEAPON_NIGHTSTICK = true
+    },
+
+    -- Also convert matching firearms already held by a gouv player when this
+    -- resource starts, when the player loads, or when their job becomes gouv.
+    UpdateExistingGovernmentWeapons = true,
+
+    -- Internal one-use marker. Do not use this metadata key in other scripts.
+    PendingMetadataKey = '_codexGovernmentSerial'
 }
 
 Config.Identification = {

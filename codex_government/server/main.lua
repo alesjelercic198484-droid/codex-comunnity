@@ -3,6 +3,10 @@ local ESX
 local presentationCooldowns = {}
 local cuffCooldowns = {}
 local safetyCooldowns = {}
+local governmentSerialWeapons = {}
+local serialSecond = 0
+local serialCounter = 0
+local serialHookId
 
 local function debugPrint(message)
     if Config.Debug then
@@ -274,11 +278,143 @@ local function processCuffAttempt(attackerId, targetId)
     return false
 end
 
+local function getGovernmentSerialPrefix()
+    local configuredPrefix = Config.WeaponSerials and Config.WeaponSerials.Prefix or 'GOV'
+    local prefix = tostring(configuredPrefix):upper():gsub('[^A-Z0-9]', ''):sub(1, 8)
+    return prefix ~= '' and prefix or 'GOV'
+end
+
+local function generateGovernmentSerial()
+    local issuedAt = os.time()
+
+    if serialSecond ~= issuedAt then
+        serialSecond = issuedAt
+        serialCounter = math.random(0, 16777215)
+    else
+        serialCounter = (serialCounter + 1) % 16777216
+    end
+
+    return ('%s-%08X-%06X'):format(
+        getGovernmentSerialPrefix(),
+        issuedAt,
+        serialCounter
+    )
+end
+
+local function registerGovernmentSerialHook(itemFilter)
+    if not Config.WeaponSerials or not Config.WeaponSerials.Enabled or not next(itemFilter) then
+        return true
+    end
+
+    if serialHookId then return true end
+
+    local pendingKey = Config.WeaponSerials.PendingMetadataKey or '_codexGovernmentSerial'
+    local ok, hookId = pcall(function()
+        return exports.ox_inventory:registerHook('createItem', function(payload)
+            local metadata = payload.metadata
+            if type(metadata) ~= 'table' then return end
+
+            local playerId = tonumber(payload.inventoryId)
+            local markedForGovernment = metadata[pendingKey] == true
+            if not markedForGovernment and not (playerId and isGovernmentPlayer(playerId)) then
+                return
+            end
+
+            metadata[pendingKey] = nil
+
+            local expectedPrefix = getGovernmentSerialPrefix() .. '-'
+            local currentSerial = tostring(metadata.serial or '')
+            if currentSerial:sub(1, #expectedPrefix) ~= expectedPrefix then
+                metadata.serial = generateGovernmentSerial()
+            end
+
+            metadata.governmentIssued = true
+            metadata.issuingAgency = Config.JobLabel
+            return metadata
+        end, {
+            itemFilter = itemFilter
+        })
+    end)
+
+    if not ok or not hookId then
+        print(('[%s] ERROR: failed to register GOV weapon serial hook: %s'):format(
+            RESOURCE,
+            tostring(hookId)
+        ))
+        return false
+    end
+
+    serialHookId = hookId
+
+    local filteredCount = 0
+    for _ in pairs(itemFilter) do filteredCount = filteredCount + 1 end
+    debugPrint(('Registered GOV serial hook for %d weapon type(s)'):format(filteredCount))
+    return true
+end
+
+local function updateExistingGovernmentWeaponSerials(playerId)
+    if not Config.WeaponSerials
+        or not Config.WeaponSerials.Enabled
+        or not Config.WeaponSerials.UpdateExistingGovernmentWeapons
+        or not isGovernmentPlayer(playerId)
+    then
+        return 0
+    end
+
+    local expectedPrefix = getGovernmentSerialPrefix() .. '-'
+    local updated = 0
+    local xPlayer = getXPlayer(playerId)
+    local firstName, lastName = getIdentity(xPlayer)
+    local registeredName = (firstName .. ' ' .. lastName):gsub('%s+$', '')
+
+    for itemName in pairs(governmentSerialWeapons) do
+        local ok, slots = pcall(function()
+            return exports.ox_inventory:Search(playerId, 'slots', itemName)
+        end)
+
+        if ok and type(slots) == 'table' then
+            for _, slotData in pairs(slots) do
+                local metadata = slotData.metadata or {}
+                local currentSerial = tostring(metadata.serial or '')
+
+                if currentSerial:sub(1, #expectedPrefix) ~= expectedPrefix then
+                    local replacement = {}
+                    for key, value in pairs(metadata) do replacement[key] = value end
+
+                    replacement.serial = generateGovernmentSerial()
+                    replacement.governmentIssued = true
+                    replacement.issuingAgency = Config.JobLabel
+                    if not replacement.registered or replacement.registered == true then
+                        replacement.registered = registeredName
+                    end
+
+                    local setOk, setResult = pcall(function()
+                        return exports.ox_inventory:SetMetadata(playerId, slotData.slot, replacement)
+                    end)
+
+                    if setOk and setResult ~= false then updated = updated + 1 end
+                end
+            end
+        end
+    end
+
+    if updated > 0 then
+        print(('[%s] Assigned GOV serials to %d existing weapon(s) for player %d'):format(
+            RESOURCE,
+            updated,
+            playerId
+        ))
+    end
+
+    return updated
+end
+
 local function registerArmory()
     if not Config.Armory.Enabled then return end
 
     local inventory = {}
     local skipped = {}
+    local serialItemFilter = {}
 
     for i = 1, #Config.Armory.Items do
         local configuredItem = Config.Armory.Items[i]
@@ -303,6 +439,18 @@ local function registerArmory()
                 shopItem.grade = 0
             end
 
+            local excluded = Config.WeaponSerials and Config.WeaponSerials.ExcludedItems or {}
+            if Config.WeaponSerials
+                and Config.WeaponSerials.Enabled
+                and item.weapon == true
+                and excluded[configuredItem.name] ~= true
+            then
+                shopItem.metadata = shopItem.metadata or {}
+                shopItem.metadata.registered = true
+                shopItem.metadata[Config.WeaponSerials.PendingMetadataKey or '_codexGovernmentSerial'] = true
+                serialItemFilter[configuredItem.name] = true
+            end
+
             inventory[#inventory + 1] = shopItem
         else
             skipped[#skipped + 1] = configuredItem.name
@@ -315,6 +463,11 @@ local function registerArmory()
             table.concat(skipped, ', ')
         ))
         print(('[%s] Install the official p_policejob/INSTALL/ITEMS definitions, then restart this resource.'):format(RESOURCE))
+    end
+
+    if not registerGovernmentSerialHook(serialItemFilter) then
+        print(('[%s] ERROR: armory registration stopped to prevent weapons being issued without GOV serials.'):format(RESOURCE))
+        return
     end
 
     local ok, result = pcall(function()
@@ -330,6 +483,14 @@ local function registerArmory()
         print(('[%s] ERROR: failed to register armory shop: %s'):format(RESOURCE, tostring(result)))
         return
     end
+
+    governmentSerialWeapons = serialItemFilter
+
+    SetTimeout(500, function()
+        for _, playerIdString in ipairs(GetPlayers()) do
+            updateExistingGovernmentWeaponSerials(tonumber(playerIdString))
+        end
+    end)
 
     debugPrint(('Registered armory with %d available item(s)'):format(#inventory))
 end
@@ -389,12 +550,14 @@ end)
 AddEventHandler('esx:playerLoaded', function(playerId)
     SetTimeout(1000, function()
         setProtectionState(playerId)
+        updateExistingGovernmentWeaponSerials(playerId)
     end)
 end)
 
 AddEventHandler('esx:setJob', function(playerId)
     SetTimeout(0, function()
         setProtectionState(playerId)
+        updateExistingGovernmentWeaponSerials(playerId)
     end)
 end)
 
@@ -413,6 +576,13 @@ AddEventHandler('onResourceStop', function(resourceName)
         if player and player.state then
             player.state:set(Config.CuffProtection.StateKey, false, true)
         end
+    end
+
+    if serialHookId then
+        pcall(function()
+            exports.ox_inventory:removeHooks(serialHookId)
+        end)
+        serialHookId = nil
     end
 end)
 
