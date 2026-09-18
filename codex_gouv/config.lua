@@ -124,12 +124,15 @@ Config.Satellite = {
 -- available.  If your police resource exposes a client event/export, configure it here
 -- and the bridge button in the tablet will invoke it for gouv members.
 Config.MDT = {
+    -- The built-in GOUV MDT is enabled by default and needs no other resource.
+    -- A server-specific external police MDT cannot be guessed safely, so the bridge
+    -- remains disabled until its real resource/export/event is known.
     Bridge = {
         Enabled = false,
-        Resource = 'your_police_mdt',
+        Resource = false,
         Export = false,
-        ExportName = 'openMDT',
-        ClientEvent = 'police_mdt:client:open'
+        ExportName = false,
+        ClientEvent = false
     }
 }
 
@@ -137,12 +140,22 @@ Config.Armory = {
     Enabled = true,
     MaxItemCount = 50,
     WeaponAmmo = 250,
-    -- Item names are sent to ox_inventory.  Items not installed on the server simply
+    -- Automatically adds police-labelled items and every WEAPON_* definition that
+    -- exists in the installed ox_inventory. This means no server-specific item list
+    -- has to be guessed here. The explicit lists below are safe fallback entries.
+    AutoDiscoverPoliceItems = true,
+    AutoDiscoverWeapons = true,
+    -- Item names are sent to ox_inventory. Items not installed on the server simply
     -- return a clean error; no arbitrary item name can be requested by a client.
     Items = {
         { name = 'handcuffs', label = 'Handcuffs', count = 1, icon = '🔗' },
+        { name = 'cuffs', label = 'Cuffs', count = 1, icon = '🔗' },
         { name = 'cuffkeys', label = 'Cuff Keys', count = 1, icon = '🗝️' },
         { name = 'radio', label = 'Police Radio', count = 1, icon = '📻' },
+        { name = 'police_radio', label = 'Police Radio', count = 1, icon = '📻' },
+        { name = 'bulletproof', label = 'Bulletproof Vest', count = 1, icon = '🛡️' },
+        { name = 'kevlar', label = 'Kevlar Vest', count = 1, icon = '🛡️' },
+        { name = 'ifak', label = 'IFAK', count = 1, icon = '➕' },
         { name = 'bodycam', label = 'Body Camera', count = 1, icon = '📹' },
         { name = 'police_stormram', label = 'Police Storm Ram', count = 1, icon = '🚪' },
         { name = 'evidence_bag', label = 'Evidence Bag', count = 5, icon = '🧾' },

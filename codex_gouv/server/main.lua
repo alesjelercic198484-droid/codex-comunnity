@@ -326,6 +326,58 @@ local function BuildDashboard(source, mode)
     }
 end
 
+local function LooksLikePoliceItem(name, definition)
+    local label = type(definition) == 'table' and (definition.label or definition.description) or ''
+    local searchable = (('%s %s'):format(tostring(name or ''), tostring(label or ''))):lower()
+    for _, keyword in ipairs({
+        'police', 'cuff', 'handcuff', 'evidence', 'bodycam', 'radio', 'badge',
+        'armour', 'armor', 'bulletproof', 'kevlar', 'spike', 'fingerprint',
+        'breathalyzer', 'megaphone', 'shield', 'forensic', 'medikit', 'firstaid',
+        'repairkit', 'stormram', 'breach'
+    }) do
+        if searchable:find(keyword, 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function DiscoverOxInventoryEntries()
+    if Config.Armory.AutoDiscoverPoliceItems ~= true and Config.Armory.AutoDiscoverWeapons ~= true then
+        return
+    end
+
+    local ok, definitions = pcall(function()
+        return exports.ox_inventory:Items()
+    end)
+    if not ok or type(definitions) ~= 'table' then
+        DebugPrint('ox_inventory Items() export was unavailable; explicit arsenal entries remain active.')
+        return
+    end
+
+    for name, definition in pairs(definitions) do
+        if type(name) == 'string' and type(definition) == 'table' then
+            local upperName = name:upper()
+            if Config.Armory.AutoDiscoverWeapons == true and upperName:match('^WEAPON_') and not armoryWeapons[upperName] then
+                armoryWeapons[upperName] = {
+                    name = upperName,
+                    label = definition.label or name,
+                    icon = '🔫'
+                }
+                Config.Armory.Weapons[#Config.Armory.Weapons + 1] = armoryWeapons[upperName]
+            elseif Config.Armory.AutoDiscoverPoliceItems == true and not armoryItems[name:lower()] and LooksLikePoliceItem(name, definition) then
+                armoryItems[name:lower()] = {
+                    name = name,
+                    label = definition.label or name,
+                    count = 1,
+                    icon = '📦'
+                }
+                Config.Armory.Items[#Config.Armory.Items + 1] = armoryItems[name:lower()]
+            end
+        end
+    end
+end
+
 local function BuildArmoryMaps()
     for _, item in ipairs(Config.Armory.Items or {}) do
         if item.name and item.name ~= '' then
@@ -337,6 +389,7 @@ local function BuildArmoryMaps()
             armoryWeapons[tostring(weapon.name):upper()] = weapon
         end
     end
+    DiscoverOxInventoryEntries()
 end
 
 local function CanCarry(source, itemName, count, metadata)
@@ -625,10 +678,13 @@ AddEventHandler('playerDropped', function()
 end)
 
 CreateThread(function()
-    BuildArmoryMaps()
+    while GetResourceState('ox_inventory') ~= 'started' do
+        Wait(500)
+    end
     while not TryGetESX() do
         Wait(500)
     end
+    BuildArmoryMaps()
     RegisterCallbacks()
     RegisterInventoryProtection()
 end)

@@ -31,9 +31,8 @@ ensure ox_target
 ensure codex_gouv
 ```
 
-4. Set the government building locations in `config.lua`.
-5. Add your server's actual police/sheriff/ambulance job names to `Config.PoliceJobs` and `Config.AmbulanceJobs`.
-6. Restart the resource.
+4. Restart the resource. The supplied defaults are complete for a normal ESX server and place the tablet/arsenal at the configured government building.
+5. Only change the job lists if your server uses non-standard job names; common `police`, `sheriff`, `fib`, `ambulance` and `ems` names are already included.
 
 ## Government access
 
@@ -96,9 +95,9 @@ Do not guess an event name: use the event/export documented by your installed MD
 
 ## ox_inventory items and weapons
 
-The arsenal list is in `config.lua`. Weapons are added as ox_inventory weapon items with `ammo` metadata. This resource does not silently create missing ox_inventory definitions: make sure your installed `ox_inventory/data/weapons.lua` and `items.lua` contain the entries you want to issue. Add or remove entries in the allow-list to match custom weapon packs.
+The arsenal list is in `config.lua`. Weapons are added as ox_inventory weapon items with `ammo` metadata. The resource automatically discovers every `WEAPON_*` definition available from the installed ox_inventory and also discovers police-labelled items such as cuffs, radios, evidence, body cameras, armour and shields. The explicit fallback list covers normal ESX police item names.
 
-The common police item names are also configurable. If your police resource uses names such as `police_radio`, `armour`, `kevlar` or `advancedlockpick`, replace/add them in `Config.Armory.Items`.
+Missing ox_inventory definitions are rejected cleanly by the server; they are never silently created. Custom police item names can still be added to `Config.Armory.Items` if their label does not contain a police keyword.
 
 ## Testing checklist
 
