@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOUV Command Tablet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="hidden">
+    <main class="tablet" aria-label="Government command tablet">
+        <header class="topbar">
+            <div class="brand">
+                <div class="seal">✦</div>
+                <div>
+                    <p class="overline">SAN ANDREAS // SECURE NETWORK</p>
+                    <h1 id="title">GOUV // COMMAND TABLET</h1>
+                    <p class="subtitle" id="subtitle">Government operations and live city intelligence.</p>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="secure"><i></i> SECURE</span>
+                <button class="icon-btn" id="refresh" title="Refresh data">↻</button>
+                <button class="icon-btn close" id="close" title="Close tablet">×</button>
+            </div>
+        </header>
+
+        <nav class="nav" aria-label="Tablet sections">
+            <button class="nav-btn active" data-mode="mdt"><span>▣</span> MDT / DIRECTORY</button>
+            <button class="nav-btn" data-mode="satellite"><span>⌁</span> SATELLITE</button>
+            <button class="nav-btn" data-mode="armory"><span>◈</span> ARSENAL</button>
+            <button class="bridge-btn hidden" id="externalMdt">OPEN POLICE MDT ↗</button>
+        </nav>
+
+        <section id="mdtView" class="view">
+            <div class="hero-row">
+                <div>
+                    <p class="kicker">OPERATIONS DESK</p>
+                    <h2>Live city directory</h2>
+                    <p class="muted">Locate every connected player and identify emergency services in real time.</p>
+                </div>
+                <div class="official-card" id="officialCard"></div>
+            </div>
+            <div class="stat-grid" id="stats"></div>
+            <div class="section-head">
+                <div><p class="kicker">CONNECTED UNITS</p><h3>Player directory</h3></div>
+                <span class="updated" id="updated">Awaiting uplink</span>
+            </div>
+            <div class="directory" id="directory"></div>
+        </section>
+
+        <section id="satelliteView" class="view hidden">
+            <div class="hero-row compact">
+                <div>
+                    <p class="kicker">EYES OVER SAN ANDREAS</p>
+                    <h2>Satellite player tracking</h2>
+                    <p class="muted">Green civilians, blue police and red ambulance units. Your position is ringed.</p>
+                </div>
+                <div class="legend">
+                    <span><i class="dot green"></i> Players</span>
+                    <span><i class="dot blue"></i> Police</span>
+                    <span><i class="dot red"></i> Ambulance</span>
+                </div>
+            </div>
+            <div class="satellite-layout">
+                <div class="map-shell">
+                    <div class="map-toolbar"><span>LIVE TACTICAL OVERLAY</span><span id="mapCount">0 CONTACTS</span></div>
+                    <div class="map" id="map">
+                        <div class="map-lines lines-one"></div>
+                        <div class="map-lines lines-two"></div>
+                        <div class="map-label label-north">NORTH</div>
+                        <div class="map-label label-city">LOS SANTOS</div>
+                        <div class="map-label label-county">BLAINE COUNTY</div>
+                        <div id="markers"></div>
+                    </div>
+                    <div class="map-scale"><span>TACTICAL GRID // NORTH UP</span><span id="coordinates">Awaiting coordinates</span></div>
+                </div>
+                <aside class="contact-panel">
+                    <div class="section-head no-margin"><div><p class="kicker">CONTACTS</p><h3>Units on map</h3></div><span class="live-pill"><i></i> LIVE</span></div>
+                    <div class="contact-list" id="contactList"></div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="armoryView" class="view hidden">
+            <div class="hero-row compact">
+                <div>
+                    <p class="kicker">AUTHORIZED LOGISTICS</p>
+                    <h2>Government arsenal</h2>
+                    <p class="muted">All issued equipment is delivered through ox_inventory and recorded by the server.</p>
+                </div>
+                <div class="armory-note">WEAPON ACCESS // GOUV ONLY</div>
+            </div>
+            <div class="armory-toolbar">
+                <div class="filters" id="filters">
+                    <button class="filter active" data-filter="weapons">Weapons</button>
+                    <button class="filter" data-filter="items">Police items</button>
+                </div>
+                <input id="armorySearch" type="search" placeholder="Search authorized equipment..." autocomplete="off">
+            </div>
+            <div class="armory-grid" id="armoryGrid"></div>
+        </section>
+
+        <footer class="footer"><span>GOUV SECURE TERMINAL</span><span>Use ESC or × to close</span><span class="status-line"><i></i> ENCRYPTED UPLINK</span></footer>
+    </main>
+    <div class="toast hidden" id="toast"></div>
+    <script src="app.js"></script>
+</body>
+</html>
