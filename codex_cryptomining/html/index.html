@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeX CryptoMining</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="app" class="hidden">
+        <!-- WAREHOUSE PANEL -->
+        <section id="panel" class="window hidden">
+            <header class="window-head">
+                <div class="brand">
+                    <span class="logo">₿</span>
+                    <div>
+                        <h1 id="panel-title">CRYPTO MINING</h1>
+                        <p id="panel-subtitle">Warehouse</p>
+                    </div>
+                </div>
+                <div class="head-right">
+                    <div class="ticker">
+                        <span class="ticker-label">BTC</span>
+                        <span id="ticker-price">$0</span>
+                        <span id="ticker-trend" class="trend">0.00%</span>
+                    </div>
+                    <button class="close" data-close>✕</button>
+                </div>
+            </header>
+
+            <nav class="tabs">
+                <button class="tab active" data-tab="overview">Overview</button>
+                <button class="tab" data-tab="rigs">Rigs</button>
+                <button class="tab" data-tab="market">Market</button>
+                <button class="tab" data-tab="power">Power</button>
+                <button class="tab" data-tab="keys">Keys</button>
+            </nav>
+
+            <main class="content">
+                <!-- OVERVIEW -->
+                <div class="tab-page active" data-page="overview">
+                    <div class="stat-grid">
+                        <div class="stat">
+                            <span class="stat-label">Wallet</span>
+                            <span class="stat-value" id="stat-btc">0.000000</span>
+                            <span class="stat-sub" id="stat-btc-value">$0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Hashrate</span>
+                            <span class="stat-value" id="stat-hash">0 MH/s</span>
+                            <span class="stat-sub" id="stat-perhour">0.000000 BTC/h</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Rigs</span>
+                            <span class="stat-value" id="stat-rigs">0 / 0</span>
+                            <span class="stat-sub" id="stat-gpus">0 GPU</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Power draw</span>
+                            <span class="stat-value" id="stat-load">0 kW</span>
+                            <span class="stat-sub" id="stat-power">Online</span>
+                        </div>
+                    </div>
+
+                    <div class="split">
+                        <div class="card">
+                            <h2>Facility</h2>
+                            <ul class="info-list">
+                                <li><span>Owner</span><strong id="info-owner">-</strong></li>
+                                <li><span>Type</span><strong id="info-type">-</strong></li>
+                                <li><span>Storage limit</span><strong id="info-storage">-</strong></li>
+                                <li><span>Total mined</span><strong id="info-mined">-</strong></li>
+                                <li><span>Total earned</span><strong id="info-earned">-</strong></li>
+                                <li><span>Unpaid bill</span><strong id="info-bill">-</strong></li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h2>Quick actions</h2>
+                            <div class="action-column">
+                                <button class="btn primary" data-action="installRig">Install a rig</button>
+                                <button class="btn" data-action="sellAll">Sell every BTC</button>
+                                <button class="btn" data-action="payBill">Pay the bill</button>
+                                <button class="btn ghost" data-action="togglePower">Toggle power</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGS -->
+                <div class="tab-page" data-page="rigs">
+                    <div class="rig-toolbar">
+                        <button class="btn primary small" data-action="installRig">+ New rig</button>
+                        <span class="hint" id="rig-hint">Select a rig to manage it.</span>
+                    </div>
+                    <div class="rig-grid" id="rig-grid"></div>
+                </div>
+
+                <!-- MARKET -->
+                <div class="tab-page" data-page="market">
+                    <div class="card">
+                        <h2>Bitcoin market</h2>
+                        <div class="market-head">
+                            <div>
+                                <span class="stat-label">Current price</span>
+                                <span class="stat-value" id="market-price">$0</span>
+                            </div>
+                            <div>
+                                <span class="stat-label">Trend</span>
+                                <span class="stat-value" id="market-trend">0.00%</span>
+                            </div>
+                            <div>
+                                <span class="stat-label">Exchange fee</span>
+                                <span class="stat-value" id="market-fee">0%</span>
+                            </div>
+                        </div>
+                        <canvas id="market-chart" width="900" height="220"></canvas>
+                    </div>
+
+                    <div class="card">
+                        <h2>Sell</h2>
+                        <div class="sell-row">
+                            <input type="number" id="sell-amount" min="0" step="0.000001" placeholder="0.000000" />
+                            <button class="btn primary" data-action="sellAmount">Sell</button>
+                            <button class="btn" data-action="sellAll">Sell everything</button>
+                        </div>
+                        <p class="hint" id="sell-preview">Available: 0.000000 BTC</p>
+                    </div>
+                </div>
+
+                <!-- POWER -->
+                <div class="tab-page" data-page="power">
+                    <div class="card">
+                        <h2>Electricity</h2>
+                        <ul class="info-list">
+                            <li><span>Status</span><strong id="power-status">-</strong></li>
+                            <li><span>Current draw</span><strong id="power-load">-</strong></li>
+                            <li><span>Unpaid bill</span><strong id="power-bill">-</strong></li>
+                        </ul>
+                        <div class="action-row">
+                            <button class="btn primary" data-action="payBill">Pay the bill</button>
+                            <button class="btn ghost" data-action="togglePower">Toggle power</button>
+                        </div>
+                        <p class="hint">The power is cut automatically when the unpaid bill gets too high. Rigs stop mining while the power is off but the base fee keeps running.</p>
+                    </div>
+                </div>
+
+                <!-- KEYS -->
+                <div class="tab-page" data-page="keys">
+                    <div class="card">
+                        <h2>Give the keys</h2>
+                        <div class="sell-row">
+                            <select id="nearby-players"></select>
+                            <button class="btn" data-action="refreshPlayers">Refresh</button>
+                            <button class="btn primary" data-action="giveKeys">Give the keys</button>
+                        </div>
+                        <p class="hint">The player must stand next to you.</p>
+                    </div>
+                    <div class="card">
+                        <h2>Key holders</h2>
+                        <div id="key-list" class="key-list"></div>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- SHOP -->
+        <section id="shop" class="window small-window hidden">
+            <header class="window-head">
+                <div class="brand">
+                    <span class="logo">🛒</span>
+                    <div>
+                        <h1 id="shop-title">TechShop</h1>
+                        <p id="shop-subtitle">Hardware and upgrades</p>
+                    </div>
+                </div>
+                <button class="close" data-close>✕</button>
+            </header>
+            <main class="content">
+                <div id="shop-list" class="shop-list"></div>
+            </main>
+        </section>
+
+        <!-- BROKER -->
+        <section id="broker" class="window small-window hidden">
+            <header class="window-head">
+                <div class="brand">
+                    <span class="logo">🏢</span>
+                    <div>
+                        <h1>Real estate</h1>
+                        <p id="broker-subtitle">Mining warehouses for sale</p>
+                    </div>
+                </div>
+                <button class="close" data-close>✕</button>
+            </header>
+            <main class="content">
+                <div id="broker-list" class="broker-list"></div>
+            </main>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
