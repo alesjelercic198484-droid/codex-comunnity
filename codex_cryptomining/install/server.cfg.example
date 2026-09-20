@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# codex_cryptomining - server.cfg
+# ---------------------------------------------------------------------------
+
+# Start order matters: the framework and the database first.
+ensure oxmysql
+ensure es_extended
+
+# Optional but recommended integrations (start them before the resource).
+ensure ox_lib
+ensure ox_inventory
+ensure ox_target
+
+# The resource itself.
+ensure codex_cryptomining
+
+# ---------------------------------------------------------------------------
+# ONESYNC (strongly recommended)
+# ---------------------------------------------------------------------------
+# Server side distance checks only work with OneSync enabled. Without it the
+# resource still runs, but those anti-cheat checks are skipped and a warning
+# is printed on startup.
+set onesync on
+
+# ---------------------------------------------------------------------------
+# ADMIN PERMISSION
+# ---------------------------------------------------------------------------
+# Required to use /crypto (price, reset, info, setowner).
+add_ace group.admin codex_cryptomining.admin allow
+
+# Give it to a specific player instead:
+# add_principal identifier.license:XXXXXXXXXXXXXXXX group.admin
