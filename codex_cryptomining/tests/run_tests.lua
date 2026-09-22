@@ -113,6 +113,72 @@ for _, warehouse in ipairs(Config.Warehouses) do
     ok(interior ~= nil, ('warehouse %s has a valid interior'):format(warehouse.id))
 end
 
+-- Interiors must point at the base game Import / Export vehicle warehouse and
+-- keep every spawn point inside that room (anchor 994.5925, -3002.594, -39.647).
+-- A stray coordinate here means props / the player spawning in the void.
+local IMPEXP_IPL = 'imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_'
+local ANCHOR = { x = 994.5925, y = -3002.594, z = -39.64699 }
+
+local function within(point, radius)
+    if not point then
+        return false
+    end
+    local dx = (point.x or 0) - ANCHOR.x
+    local dy = (point.y or 0) - ANCHOR.y
+    local dz = (point.z or 0) - ANCHOR.z
+    return math.sqrt(dx * dx + dy * dy + dz * dz) <= radius
+end
+
+for typeName, interior in pairs(Config.Interiors) do
+    local iplOk = false
+    for _, ipl in ipairs(interior.ipls or {}) do
+        if ipl == IMPEXP_IPL then
+            iplOk = true
+        end
+    end
+    ok(iplOk, ('interior %s loads the Import/Export vehicle warehouse IPL'):format(typeName))
+    ok(within(interior.enter, 8.0), ('interior %s entrance sits inside the room'):format(typeName))
+    ok(within(interior.terminal, 12.0), ('interior %s terminal sits inside the room'):format(typeName))
+    ok(within(interior.power, 12.0), ('interior %s power panel sits inside the room'):format(typeName))
+    ok(within(interior.storage, 12.0), ('interior %s storage sits inside the room'):format(typeName))
+
+    local slotsInside = true
+    for _, slot in ipairs(interior.slots or {}) do
+        if not within(slot, 20.0) then
+            slotsInside = false
+        end
+    end
+    ok(slotsInside, ('every rig slot of interior %s stays inside the room'):format(typeName))
+
+    -- Rig banks must leave a walkable central aisle: two column spacings are
+    -- deliberately skipped in the middle of every row.
+    local aisleFound = false
+    local rowsByY = {}
+    for _, slot in ipairs(interior.slots or {}) do
+        local rowKey = math.floor((slot.y or 0) * 100 + 0.5)
+        rowsByY[rowKey] = rowsByY[rowKey] or {}
+        rowsByY[rowKey][#rowsByY[rowKey] + 1] = slot.x or 0
+    end
+    for _, xs in pairs(rowsByY) do
+        table.sort(xs)
+        for index = 2, #xs do
+            if (xs[index] - xs[index - 1]) > 2.5 * 1.60 then
+                aisleFound = true
+            end
+        end
+    end
+    ok(aisleFound, ('interior %s rig banks leave a walkable central aisle'):format(typeName))
+
+    -- Every rig faces the entrance / aisle so its monitor reads toward the player.
+    local facingOk = true
+    for _, slot in ipairs(interior.slots or {}) do
+        if math.abs(((slot.w or 0) % 360.0) - 180.0) > 0.01 then
+            facingOk = false
+        end
+    end
+    ok(facingOk, ('every rig of interior %s faces the entrance'):format(typeName))
+end
+
 -- Locales must share the same keys.
 local missingLocale = {}
 for key in pairs(Locales.en) do
@@ -144,7 +210,10 @@ local KNOWN_PROPS = {
     ['prop_elecbox_20'] = true,
     ['prop_box_wood04a'] = true,
     ['prop_table_03'] = true,
-    ['prop_table_03b'] = true
+    ['prop_table_03b'] = true,
+    ['prop_monitor_03b'] = true,
+    ['prop_monitor_02'] = true,
+    ['prop_monitor_04'] = true
 }
 
 local KNOWN_PEDS = {
@@ -168,6 +237,7 @@ checkProp(Config.Props.BrokenModel, 'broken rig')
 checkProp(Config.Props.Rig.base and Config.Props.Rig.base.model, 'rig base')
 checkProp(Config.Props.Gpu.model, 'gpu')
 checkProp(Config.Props.Cooler.model, 'cooler')
+checkProp(Config.Props.Monitor and Config.Props.Monitor.model, 'rig monitor')
 checkProp(Config.Props.Terminal.model, 'terminal')
 checkProp(Config.Props.PowerBox.model, 'power box')
 checkProp(Config.Props.Storage.model, 'storage')
@@ -269,6 +339,16 @@ result = Mock.CallCallback('codex_cryptomining:shopAction', 1, { action = 'buyWa
 ok(result and not result.ok, 'ownership limit is enforced')
 equals(owner.accounts.bank, balanceBefore, 'no money taken when the limit blocks the purchase')
 
+-- Regression: right after buying, the owner must be able to walk to the
+-- entrance and actually enter the interior (the whole point of the purchase).
+owner.coords = vector3(firstWarehouse.entrance.x, firstWarehouse.entrance.y, firstWarehouse.entrance.z)
+local boughtEnter = Mock.CallCallback('codex_cryptomining:enterWarehouse', 1, firstWarehouse.id)
+ok(boughtEnter ~= nil and boughtEnter.warehouse ~= nil, 'a fresh owner can enter right after buying')
+ok(boughtEnter and boughtEnter.warehouse.isOwner == true, 'the buyer is recognised as the owner on entry')
+-- Put the player back in the world so later tests start clean.
+WH.RemoveViewer(1)
+WH.SetPlayerBucket(1, nil)
+
 -- ---------------------------------------------------------------------------
 group('Rigs & GPUs')
 -- ---------------------------------------------------------------------------
@@ -359,6 +439,75 @@ for _, rig in pairs(warehouseState.rigs) do
     slotsSeen[rig.slot] = true
 end
 ok(not slotDuplicate, 'no two rigs share the same slot')
+
+-- ---------------------------------------------------------------------------
+group('GPU storage')
+-- ---------------------------------------------------------------------------
+-- The crate inside the interior is a working storage. Without ox_inventory
+-- the classic ESX path deposits everything carried and withdraws from stock.
+local function storageCall(source)
+    return Mock.CallCallback('codex_cryptomining:storageAction', source, firstWarehouse.id)
+end
+
+-- Start clean.
+WH.SetGpuStock(firstWarehouse.id, 0)
+owner.inventory[FW.Item('gpu')] = 0
+friend.inventory[FW.Item('gpu')] = 0
+
+-- Give the friend a key so we can prove keys unlock the storage too.
+WH.GiveKey(firstWarehouse.id, friend.identifier, friend.name)
+local function clearStorageKey()
+    WH.Get(firstWarehouse.id).keys[friend.identifier] = nil
+end
+
+-- A visitor without keys gets nothing.
+result = storageCall(3)
+ok(result == nil, 'no access without keys')
+
+-- The owner deposits every GPU he is carrying.
+owner.inventory[FW.Item('gpu')] = 3
+result = storageCall(1)
+ok(result and result.ok and result.mode == 'esx' and result.action == 'deposited', 'deposits all carried GPUs')
+equals(result and result.count, 3, 'three GPUs deposited')
+equals(owner.inventory[FW.Item('gpu')] or 0, 0, 'inventory emptied after deposit')
+equals(WH.GetGpuStock(firstWarehouse.id), 3, 'stock updated after deposit')
+
+-- A key holder can see the same stock (deposit 1, stock becomes 4).
+friend.inventory[FW.Item('gpu')] = 1
+result = storageCall(2)
+ok(result and result.ok and result.stock == 4, 'key holder shares the same warehouse stock')
+
+-- While carrying nothing, the owner takes the whole stock back.
+owner.inventory[FW.Item('gpu')] = 0
+result = storageCall(1)
+ok(result and result.ok and result.action == 'withdrew', 'withdraws from the stock')
+equals(result and result.count, 4, 'withdrew everything that fit')
+equals(WH.GetGpuStock(firstWarehouse.id), 0, 'stock emptied after withdraw')
+
+-- Empty storage + empty hands: explicit failure, no duping.
+owner.inventory[FW.Item('gpu')] = 0
+result = storageCall(1)
+ok(result == nil, 'nothing to deposit or withdraw')
+
+-- Withdraw when the player cannot carry anything: nothing must be dupe-glued.
+WH.SetGpuStock(firstWarehouse.id, 50)
+local originalCanCarry = owner.canCarryItem
+owner.canCarryItem = function() return false end
+result = storageCall(1)
+ok(result == nil, 'cannot carry -> nothing is withdrawn')
+equals(WH.GetGpuStock(firstWarehouse.id), 50, 'stock untouched when the backpack is full')
+equals(owner.inventory[FW.Item('gpu')] or 0, 0, 'no phantom GPUs appeared')
+owner.canCarryItem = originalCanCarry
+WH.SetGpuStock(firstWarehouse.id, 0)
+
+-- The serialized panel now reports the stock.
+WH.SetGpuStock(firstWarehouse.id, 7)
+local serialized = WH.Serialize(firstWarehouse.id, owner.identifier)
+equals(serialized and serialized.gpuStock, 7, 'gpuStock reaches the UI payload')
+WH.SetGpuStock(firstWarehouse.id, 0)
+
+-- Restore the permission state the next groups expect.
+clearStorageKey()
 
 -- ---------------------------------------------------------------------------
 group('Permissions')

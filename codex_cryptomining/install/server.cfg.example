@@ -3,13 +3,17 @@
 # ---------------------------------------------------------------------------
 
 # Start order matters: the framework and the database first.
+# These two are the ONLY hard requirements.
 ensure oxmysql
 ensure es_extended
 
-# Optional but recommended integrations (start them before the resource).
-ensure ox_lib
-ensure ox_inventory
-ensure ox_target
+# Optional integrations (start them before the resource if you use them).
+# The resource ships its OWN notifications, progress bar and skillcheck, so
+# ox_lib is NOT required. ox_inventory and ox_target are auto-detected and
+# used if present, otherwise the built-in inventory / text-UI fallbacks run.
+ensure ox_inventory   # optional
+ensure ox_target      # optional
+# ensure ox_lib       # optional, only if you set the *.Type options to 'ox_lib'
 
 # The resource itself.
 ensure codex_cryptomining

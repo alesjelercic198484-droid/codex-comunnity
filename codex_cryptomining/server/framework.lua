@@ -75,7 +75,28 @@ function FW.GetPlayerByIdentifier(identifier)
         return nil
     end
 
-    for _, xPlayer in pairs(ESX.GetExtendedPlayers()) do
+    -- Modern ESX exposes GetExtendedPlayers; legacy ESX only has GetPlayers
+    -- returning source ids. Support both so the resource survives older cores.
+    local players = {}
+
+    if ESX.GetExtendedPlayers then
+        local ok, result = pcall(ESX.GetExtendedPlayers)
+        if ok and type(result) == 'table' then
+            players = result
+        end
+    elseif ESX.GetPlayers then
+        local ok, ids = pcall(ESX.GetPlayers)
+        if ok and type(ids) == 'table' then
+            for _, playerId in ipairs(ids) do
+                local xPlayer = ESX.GetPlayerFromId(playerId)
+                if xPlayer then
+                    players[#players + 1] = xPlayer
+                end
+            end
+        end
+    end
+
+    for _, xPlayer in pairs(players) do
         if xPlayer and xPlayer.identifier == identifier then
             return xPlayer
         end
@@ -426,8 +447,28 @@ function FW.CountPolice()
         jobs[job] = true
     end
 
+    -- Legacy ESX has no GetExtendedPlayers; fall back to GetPlayers ids.
+    local players = {}
+
+    if ESX.GetExtendedPlayers then
+        local ok, result = pcall(ESX.GetExtendedPlayers)
+        if ok and type(result) == 'table' then
+            players = result
+        end
+    elseif ESX.GetPlayers then
+        local ok, ids = pcall(ESX.GetPlayers)
+        if ok and type(ids) == 'table' then
+            for _, playerId in ipairs(ids) do
+                local xPlayer = ESX.GetPlayerFromId(playerId)
+                if xPlayer then
+                    players[#players + 1] = xPlayer
+                end
+            end
+        end
+    end
+
     local count = 0
-    for _, xPlayer in pairs(ESX.GetExtendedPlayers()) do
+    for _, xPlayer in pairs(players) do
         if xPlayer and xPlayer.job and jobs[xPlayer.job.name] then
             count = count + 1
         end

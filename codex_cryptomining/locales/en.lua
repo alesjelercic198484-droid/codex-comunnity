@@ -24,6 +24,11 @@ Locales['en'] = {
     ['warehouse_panel'] = 'Management terminal',
     ['warehouse_power'] = 'Electricity panel',
     ['warehouse_storage'] = 'GPU storage',
+    ['storage_deposited'] = 'Stored %d GPU(s). Stock: %d.',
+    ['storage_withdrew'] = 'Took %d GPU(s) from storage. Stock: %d.',
+    ['storage_empty'] = 'Nothing to store or take.',
+    ['storage_cannot_carry'] = 'You cannot carry the stored GPUs.',
+    ['storage_failed'] = 'The storage could not be updated.',
     ['warehouse_blip'] = 'Crypto Warehouse',
     ['keys_given'] = 'You gave the keys to %s.',
     ['keys_received'] = 'You received the keys of %s.',
@@ -102,6 +107,15 @@ Locales['en'] = {
     ['target_rig_loot'] = 'Steal the GPUs',
     ['target_door'] = 'Force the door',
     ['press_to_open'] = 'Press ~INPUT_CONTEXT~ to %s',
+
+    -- rig monitor (per-computer status view)
+    ['rig_monitor_title'] = 'Rig monitor #%s',
+    ['rig_monitor_banner'] = 'Live status read from rig #%s',
+
+    -- skillcheck
+    ['skillcheck_title'] = 'Bypass security',
+    ['skillcheck_door'] = 'Pick the lock',
+    ['skillcheck_rig'] = 'Bypass the rig',
 
     -- admin
     ['admin_only'] = 'You are not allowed to use this command.',

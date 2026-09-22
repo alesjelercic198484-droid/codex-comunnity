@@ -96,9 +96,10 @@ local function Notify(message, notificationType)
         return
     end
 
-    local configured = (Config.Notifications and Config.Notifications.Type) or 'auto'
+    local configured = (Config.Notifications and Config.Notifications.Type) or 'builtin'
 
-    if (configured == 'auto' or configured == 'ox_lib') and IsStarted('ox_lib') then
+    -- Optional ox_lib integration (only when explicitly asked for).
+    if configured == 'ox_lib' and IsStarted('ox_lib') then
         local ok = pcall(function()
             lib.notify({
                 title = 'CryptoMining',
@@ -116,15 +117,26 @@ local function Notify(message, notificationType)
         end
     end
 
-    local esx = GetESX()
-    if esx and esx.ShowNotification then
-        esx.ShowNotification(message)
-        return
+    -- Optional ESX notification.
+    if configured == 'esx' then
+        local esx = GetESX()
+        if esx and esx.ShowNotification then
+            esx.ShowNotification(message)
+            return
+        end
     end
 
-    BeginTextCommandThefeedPost('STRING')
-    AddTextComponentSubstringPlayerName(message)
-    EndTextCommandThefeedPostTicker(false, false)
+    -- Built-in toast (default): drawn by our own NUI, needs no dependency and
+    -- no focus. Works whether the panel is open or not.
+    SendNUIMessage({
+        action = 'notify',
+        message = message,
+        type = notificationType == 'success' and 'success'
+            or notificationType == 'error' and 'error'
+            or 'inform',
+        position = (Config.Notifications and Config.Notifications.Position) or 'top-right',
+        duration = Crypto.ToInt(Config.Notifications and Config.Notifications.Duration, 5000)
+    })
 end
 
 local function HelpText(message)
@@ -133,11 +145,15 @@ local function HelpText(message)
     EndTextCommandDisplayHelp(0, false, true, -1)
 end
 
+-- Resolved by the 'progressDone' NUI callback.
+local progressPromise = nil
+
 local function Progress(label, duration)
-    local configured = (Config.Progress and Config.Progress.Type) or 'auto'
+    local configured = (Config.Progress and Config.Progress.Type) or 'builtin'
     duration = math.max(100, Crypto.ToInt(duration, 3000))
 
-    if (configured == 'auto' or configured == 'ox_lib') and IsStarted('ox_lib') then
+    -- Optional ox_lib integration (only when explicitly asked for).
+    if configured == 'ox_lib' and IsStarted('ox_lib') then
         local ok, result = pcall(function()
             return lib.progressBar({
                 duration = duration,
@@ -154,39 +170,129 @@ local function Progress(label, duration)
         end
     end
 
-    local esx = GetESX()
-    if esx and esx.Progressbar then
-        local promiseObject = promise.new()
+    -- Optional ESX progress bar.
+    if configured == 'esx' then
+        local esx = GetESX()
+        if esx and esx.Progressbar then
+            local promiseObject = promise.new()
 
-        esx.Progressbar(label, duration, {
-            FreezePlayer = true,
-            animation = { type = 'anim', dict = 'amb@world_human_bum_wash@male@low@idle_a', lib = 'idle_d' },
-            onFinish = function()
-                promiseObject:resolve(true)
-            end,
-            onCancel = function()
-                promiseObject:resolve(false)
-            end
-        })
+            esx.Progressbar(label, duration, {
+                FreezePlayer = true,
+                animation = { type = 'anim', dict = 'amb@world_human_bum_wash@male@low@idle_a', lib = 'idle_d' },
+                onFinish = function()
+                    promiseObject:resolve(true)
+                end,
+                onCancel = function()
+                    promiseObject:resolve(false)
+                end
+            })
 
-        return Citizen.Await(promiseObject) == true
+            return Citizen.Await(promiseObject) == true
+        end
     end
 
-    -- Built in fallback: freeze + spinner.
+    -- Built-in progress bar (default): drawn by our own NUI, no dependency.
+    -- The player is frozen and a work animation is played for immersion.
     local playerPed = PlayerPedId()
     FreezeEntityPosition(playerPed, true)
 
-    BeginTextCommandBusyspinnerOn('STRING')
-    AddTextComponentSubstringPlayerName(label)
-    EndTextCommandBusyspinnerOn(4)
+    local dict = 'anim@amb@machinery@speed_drill@'
+    RequestAnimDict(dict)
+    local animTimeout = GetGameTimer() + 1000
+    while not HasAnimDictLoaded(dict) and GetGameTimer() < animTimeout do
+        Wait(10)
+    end
+    if HasAnimDictLoaded(dict) then
+        TaskPlayAnim(playerPed, dict, 'operate_biker_stand_working_02_male', 4.0, -4.0, -1, 49, 0.0, false, false, false)
+    end
 
-    Wait(duration)
+    progressPromise = promise.new()
 
-    BusyspinnerOff()
+    -- Progress bars do NOT take focus (so movement keys still register the
+    -- freeze), the NUI just renders on top.
+    SendNUIMessage({
+        action = 'progress',
+        label = label,
+        duration = duration
+    })
+
+    -- Safety timeout: if the NUI never answers, resolve anyway.
+    local guard = duration + 2000
+    CreateThread(function()
+        Wait(guard)
+        if progressPromise then
+            local p = progressPromise
+            progressPromise = nil
+            p:resolve(true)
+        end
+    end)
+
+    local finished = Citizen.Await(progressPromise) == true
+
+    ClearPedTasks(playerPed)
     FreezeEntityPosition(playerPed, false)
 
-    return true
+    return finished
 end
+
+RegisterNUICallback('progressDone', function(data, cb)
+    if progressPromise then
+        local p = progressPromise
+        progressPromise = nil
+        p:resolve(not data or data.ok ~= false)
+    end
+    cb({ ok = true })
+end)
+
+-- ---------------------------------------------------------------------------
+-- BUILT-IN SKILLCHECK
+-- ---------------------------------------------------------------------------
+-- Self-contained skillcheck minigame drawn by our own NUI, so the robbery
+-- needs no ox_lib and no external minigame resource. `rounds` is a list of
+-- difficulties ('easy' | 'medium' | 'hard'); the player must clear them all.
+local skillPromise = nil
+
+function CodexCryptoSkillcheck(rounds, title)
+    if type(rounds) ~= 'table' or #rounds == 0 then
+        rounds = { 'easy' }
+    end
+
+    skillPromise = promise.new()
+
+    -- The skillcheck DOES need focus so it can read the key press.
+    SetNuiFocus(true, false)
+
+    SendNUIMessage({
+        action = 'skillcheck',
+        rounds = rounds,
+        title = title or Crypto.L('skillcheck_title'),
+        key = 'E'
+    })
+
+    -- Safety timeout so the player can never get stuck.
+    CreateThread(function()
+        Wait(30000)
+        if skillPromise then
+            local p = skillPromise
+            skillPromise = nil
+            SetNuiFocus(uiOpen, uiOpen)
+            p:resolve(false)
+        end
+    end)
+
+    return Citizen.Await(skillPromise) == true
+end
+
+RegisterNUICallback('skillcheckDone', function(data, cb)
+    if skillPromise then
+        local p = skillPromise
+        skillPromise = nil
+        -- Restore focus to whatever state the panel was in.
+        SetNuiFocus(uiOpen, uiOpen)
+        p:resolve(data and data.ok == true)
+    end
+    cb({ ok = true })
+end)
 
 -- ---------------------------------------------------------------------------
 -- TARGET BRIDGE
@@ -594,6 +700,20 @@ local function BuildInteriorTargets(data, robbery, lootable)
                 SendNUIMessage({ action = 'tab', tab = 'power' })
             end
         end, 2.0)
+
+        -- GPU storage crate: an ox_inventory chest, or a quick store/take
+        -- transfer with the classic ESX inventory.
+        if not (Config.Storage and Config.Storage.Enabled == false) then
+            AddTargetPoint('codexcrypto:interior:storage', interiorConfig.storage, Crypto.L('warehouse_storage'), 'fa-solid fa-box-open', function()
+                local result = ServerCallback('storageAction', currentWarehouse)
+
+                if result and result.mode == 'stash' and IsStarted('ox_inventory') then
+                    -- The NUI panel is never open here; give the stash focus.
+                    SetNuiFocus(false, false)
+                    exports.ox_inventory:openInventory('stash', result.stashId)
+                end
+            end, 2.0)
+        end
     end
 
     -- Rig interactions.
@@ -618,12 +738,19 @@ local function BuildInteriorTargets(data, robbery, lootable)
                     end, 1.8)
                 end
             else
-                AddTargetPoint(name, slot, ('%s #%s'):format(Crypto.L('target_rig'), rig.slot), 'fa-solid fa-microchip', function()
+                -- Every rig is also the computer you read the crypto status
+                -- on: walk to the rig monitor and it opens the panel already
+                -- focused on that rig, with a "live from this rig" banner.
+                AddTargetPoint(name, slot, Crypto.L('rig_monitor_title', rig.slot), 'fa-solid fa-desktop', function()
                     local fresh = ServerCallback('getWarehouse', currentWarehouse)
 
                     if fresh then
                         OpenPanel(fresh)
-                        SendNUIMessage({ action = 'selectRig', rigId = rigId })
+                        SendNUIMessage({
+                            action = 'selectRig',
+                            rigId = rigId,
+                            monitor = Crypto.L('rig_monitor_banner', rig.slot)
+                        })
                     end
                 end, 1.8)
             end

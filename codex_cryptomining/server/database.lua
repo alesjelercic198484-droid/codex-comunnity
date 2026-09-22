@@ -157,6 +157,23 @@ function DB.Insert(query, parameters)
     return RunQuery(query, parameters, 'insert')
 end
 
+--- Adds a column to an existing table when it is missing (migration for
+--- databases created by older versions). MySQL has no "ADD COLUMN IF NOT
+--- EXISTS" (MariaDB only), so we check first and only ALTER when needed.
+--- Table / column names are hardcoded constants, never user input, so the
+--- format interpolation is safe here.
+local function EnsureColumn(tableName, columnName, ddl)
+    local rows = DB.Fetch(("SHOW COLUMNS FROM `%s` LIKE '%s'"):format(tableName, columnName))
+
+    if rows and #rows > 0 then
+        return true
+    end
+
+    DB.Execute(('ALTER TABLE `%s` ADD COLUMN `%s` %s'):format(tableName, columnName, ddl))
+
+    return true
+end
+
 local SCHEMA = {
     [[
         CREATE TABLE IF NOT EXISTS `codex_crypto_warehouses` (
@@ -171,6 +188,7 @@ local SCHEMA = {
           `total_mined` decimal(18,8) NOT NULL DEFAULT 0,
           `total_earned` bigint NOT NULL DEFAULT 0,
           `robbed_at` bigint NOT NULL DEFAULT 0,
+          `gpu_stock` int NOT NULL DEFAULT 0,
           `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           PRIMARY KEY (`warehouse_id`),
@@ -237,6 +255,12 @@ function DB.Init()
         for _, statement in ipairs(SCHEMA) do
             DB.Execute(statement)
         end
+
+        -- Migrations for databases created by older versions: add the columns
+        -- one by one, ignoring "duplicate column" errors. MySQL has no
+        -- "ADD COLUMN IF NOT EXISTS" (that is MariaDB only), so a plain
+        -- protected ALTER is the portable option.
+        EnsureColumn('codex_crypto_warehouses', 'gpu_stock', 'int NOT NULL DEFAULT 0')
     end
 
     DB.ready = true

@@ -55,21 +55,31 @@ Config.Inventory = {
 }
 
 Config.Notifications = {
-    -- auto = ox_lib when started, otherwise ESX notifications.
-    Type = 'auto',
+    -- The resource ships its OWN notification UI (html/), so it needs NO
+    -- external dependency. Options:
+    --   'builtin' = the integrated toast UI (default, zero dependency)
+    --   'ox_lib'  = ox_lib lib.notify (only if you already run ox_lib)
+    --   'esx'     = ESX ShowNotification
+    --   'auto'    = builtin (kept for backwards compatibility)
+    Type = 'builtin',
     Duration = 5000,
     Position = 'top-right'
 }
 
 Config.Target = {
     -- auto = ox_target, then qb-target, then the built in text UI.
+    -- ox_target is the recommended (and only external) targeting dependency.
     Type = 'auto',
     Distance = 2.0
 }
 
 Config.Progress = {
-    -- auto = ox_lib progressBar, otherwise the built in busy spinner.
-    Type = 'auto'
+    -- The resource ships its OWN progress bar UI (html/), no dependency needed.
+    --   'builtin' = the integrated progress bar (default, zero dependency)
+    --   'ox_lib'  = ox_lib lib.progressBar (only if you already run ox_lib)
+    --   'esx'     = ESX Progressbar
+    --   'auto'    = builtin
+    Type = 'builtin'
 }
 
 Config.Dispatch = {
@@ -200,17 +210,28 @@ Config.Market = {
 -- ---------------------------------------------------------------------------
 -- INTERIORS
 -- ---------------------------------------------------------------------------
--- Rig slots are generated as a grid so you do not have to write 60 vectors by
--- hand. Override `slots` with your own list if you use a custom MLO.
-local function GridSlots(origin, rows, cols, stepRight, stepForward, heading)
+-- Rig slots are generated as GPU banks split by a walkable central aisle, so
+-- you do not have to write dozens of vectors by hand and the player can walk
+-- up to every rig monitor. `gapCols` is how many column spacings are left
+-- empty in the middle of each row (the aisle). Override `slots` with your own
+-- list if you use a custom MLO.
+local function GridSlots(origin, rows, cols, stepRight, stepForward, heading, gapCols)
     local slots = {}
     local rad = math.rad(heading or 0.0)
     local rightX, rightY = math.cos(rad), math.sin(rad)
     local fwdX, fwdY = -math.sin(rad), math.cos(rad)
+    local halfBank = math.ceil(cols / 2)
+    local gridHalf = ((cols + (gapCols or 0)) * 0.5) - 0.5
 
     for row = 0, rows - 1 do
         for col = 0, cols - 1 do
-            local right = (col - (cols - 1) * 0.5) * stepRight
+            -- Columns in the right half of the row are pushed across the aisle.
+            local column = col
+            if column >= halfBank then
+                column = column + (gapCols or 0)
+            end
+
+            local right = (column - gridHalf) * stepRight
             local forward = row * stepForward
 
             slots[#slots + 1] = {
@@ -225,40 +246,60 @@ local function GridSlots(origin, rows, cols, stepRight, stepForward, heading)
     return slots
 end
 
+-- Anchor of the base game Import / Export vehicle warehouse (Finance & Felony).
+-- This interior ALWAYS exists on a vanilla server, it only needs its IPL to be
+-- requested. Every coordinate below is built around this single verified point
+-- so nothing spawns outside the room.
+--   IPL   : imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_
+--   Anchor: 994.5925, -3002.594, -39.64699   (upper level / vehicle floor)
+local IMPEXP_IPL = 'imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_'
+local IMPEXP_FLOOR = -39.64699
+-- Grid origin sits ~4 m south of the entrance so the doorway and the storage
+-- crate stay clear of the first rig row.
+local IMPEXP_GRID = vector3(994.5925, -3006.50, IMPEXP_FLOOR)
+
 Config.Interiors = {
-    -- Small interior: biker warehouse #1 (base game IPL, no MLO required).
+    -- Both facility sizes reuse the SAME base game Import / Export vehicle
+    -- warehouse (994.5925, -3002.594, -39.64699). Routing buckets keep every
+    -- owner in their own private copy, so they never see each other's rigs even
+    -- though the physical interior is shared. Only the rig capacity / layout
+    -- changes between the two sizes.
     small = {
-        label = 'Small facility',
+        label = 'Vehicle Warehouse (compact)',
         maxRigs = 12,
-        -- IPLs requested on the client. Leave empty when you use an MLO.
-        ipls = { 'bkr_biker_interior_placement_interior_2_biker_dlc_int_ware01_milo_' },
+        -- IPL requested on the client. Leave empty when you stream your own MLO.
+        ipls = { IMPEXP_IPL },
         -- Set to true when the interior comes from a streamed MLO: no IPL is
         -- requested and only the coordinates below are used.
         mlo = false,
-        -- Where the player is teleported inside.
-        enter = vector4(1000.05, -3200.55, -38.99, 269.5), -- EDIT
+        -- Where the player is teleported inside (the verified anchor point,
+        -- facing the rig floor to the south).
+        enter = vector4(994.5925, -3002.594, IMPEXP_FLOOR, 180.0), -- EDIT
         -- Where the player is teleported when leaving.
         exitOffset = vector4(0.0, 0.0, 0.0, 0.0),
-        -- Management terminal (laptop prop + interaction).
-        terminal = vector4(1004.10, -3194.20, -38.99, 88.0), -- EDIT
-        -- Electricity panel (bill + power switch).
-        power = vector4(1008.95, -3192.30, -38.99, 180.0), -- EDIT
-        -- Storage crate used to drop / pick up GPUs.
-        storage = vector4(1012.40, -3199.60, -38.99, 0.0), -- EDIT
-        slots = GridSlots(vector3(1006.20, -3202.60, -39.00), 3, 4, 1.65, 2.30, 90.0)
+        -- Management terminal (laptop prop + interaction), west of the entrance.
+        terminal = vector4(990.00, -3002.60, IMPEXP_FLOOR, 90.0), -- EDIT
+        -- Electricity panel (bill + power switch), east of the entrance.
+        power = vector4(999.20, -3002.60, IMPEXP_FLOOR, 270.0), -- EDIT
+        -- Storage crate used to drop / pick up GPUs, north of the entrance.
+        storage = vector4(994.60, -3000.40, IMPEXP_FLOOR, 0.0), -- EDIT
+        -- 6 columns x 2 rows = 12 slots in two banks, split by a ~4.8 m wide
+        -- central aisle so the player can reach every rig monitor.
+        slots = GridSlots(IMPEXP_GRID, 2, 6, 1.60, 1.70, 180.0, 2)
     },
-    -- Large interior: gunrunning bunker (base game IPL, no MLO required).
     large = {
-        label = 'Large facility',
-        maxRigs = 60,
-        ipls = { 'gr_case9_bunkerclosed', 'gr_grdlc_int_01_milo_' },
+        label = 'Vehicle Warehouse (expanded)',
+        maxRigs = 24,
+        ipls = { IMPEXP_IPL },
         mlo = false,
-        enter = vector4(895.20, -3245.60, -98.26, 90.0), -- EDIT
+        enter = vector4(994.5925, -3002.594, IMPEXP_FLOOR, 180.0), -- EDIT
         exitOffset = vector4(0.0, 0.0, 0.0, 0.0),
-        terminal = vector4(889.10, -3243.70, -98.26, 180.0), -- EDIT
-        power = vector4(899.30, -3239.60, -98.26, 270.0), -- EDIT
-        storage = vector4(886.40, -3247.90, -98.26, 0.0), -- EDIT
-        slots = GridSlots(vector3(893.60, -3251.20, -98.27), 6, 10, 1.60, 2.20, 90.0)
+        terminal = vector4(990.00, -3002.60, IMPEXP_FLOOR, 90.0), -- EDIT
+        power = vector4(999.20, -3002.60, IMPEXP_FLOOR, 270.0), -- EDIT
+        storage = vector4(994.60, -3000.40, IMPEXP_FLOOR, 0.0), -- EDIT
+        -- 8 columns x 3 rows = 24 slots in two banks, split by a ~4.8 m wide
+        -- central aisle so the player can reach every rig monitor.
+        slots = GridSlots(IMPEXP_GRID, 3, 8, 1.60, 1.70, 180.0, 2)
     }
 }
 
@@ -293,6 +334,17 @@ Config.Props = {
         enabled = true,
         offset = vector3(0.0, -0.45, 0.0)
     },
+    -- Desktop monitor facing the aisle: this is the in-world computer the
+    -- player walks up to in order to read the rig / wallet status. Set
+    -- enabled = false to disable it (interactions still work without it).
+    Monitor = {
+        model = 'prop_monitor_03b',
+        enabled = true,
+        -- Offset from the rig chassis (local x, y, z): behind and above it.
+        offset = vector3(0.0, -0.62, 0.98),
+        -- Rotated 180° relative to the rig so the screen faces the aisle.
+        heading = 180.0
+    },
     Terminal = { model = 'prop_laptop_01a', zOffset = 0.92, enabled = true },
     PowerBox = { model = 'prop_elecbox_16', zOffset = 0.0, enabled = true },
     Storage = { model = 'prop_box_wood04a', zOffset = 0.0, enabled = true },
@@ -300,6 +352,22 @@ Config.Props = {
     BrokenEffect = true,
     -- A rig that is broken can swap to a damaged looking model.
     BrokenModel = 'hei_prop_mini_sever_broken'
+}
+
+-- ---------------------------------------------------------------------------
+-- GPU STORAGE (the wooden crate inside every interior)
+-- ---------------------------------------------------------------------------
+-- A real storage, not just a prop. With ox_inventory running it becomes a
+-- stash chest (persisted by ox_inventory itself). With the classic ESX
+-- inventory it is a simple "store all / take all" transfer and the stock is
+-- persisted in the `gpu_stock` column of the warehouses table (migration is
+-- automatic when Database.AutoCreate is enabled).
+Config.Storage = {
+    Enabled = true,
+    -- ox_inventory stash settings.
+    Label = 'GPU storage',
+    Slots = 40,
+    MaxWeight = 250000
 }
 
 -- ---------------------------------------------------------------------------
@@ -475,10 +543,14 @@ Config.Robbery = {
     -- Alarm & dispatch.
     Dispatch = true,
     Minigames = {
-        -- Door: lockpick | ox_skillcheck | none
-        Door = 'ox_skillcheck',
-        -- Rig: hack | ox_skillcheck | none
-        Rig = 'ox_skillcheck',
+        -- The resource ships its OWN skillcheck minigame (html/), so no
+        -- dependency is required.
+        --   Door: 'builtin' | 'lockpick' | 'ox_skillcheck' | 'none'
+        Door = 'builtin',
+        --   Rig:  'builtin' | 'hack' | 'ox_skillcheck' | 'none'
+        Rig = 'builtin',
+        -- Difficulty list: one entry = one round the player must clear.
+        -- 'easy' | 'medium' | 'hard' control the ring speed / hit window.
         Difficulty = { 'easy', 'easy', 'medium' }
     }
 }

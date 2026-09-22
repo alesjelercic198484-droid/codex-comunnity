@@ -53,6 +53,7 @@ local function NewState(warehouseId)
         totalMined = 0.0,
         totalEarned = 0,
         robbedAt = 0,
+        gpuStock = 0,
         rigs = {},
         keys = {}
     }
@@ -89,6 +90,26 @@ end
 function WH.IsOwner(identifier, warehouseId)
     local state = WH.state[warehouseId]
     return state ~= nil and identifier ~= nil and state.owner == identifier
+end
+
+-- GPU storage: spare GPUs kept inside the warehouse crate (persisted per
+-- warehouse when the classic ESX inventory is used; ox_inventory keeps its
+-- own stash, so these helpers are only touched by the ESX fallback path).
+function WH.GetGpuStock(warehouseId)
+    local state = WH.state[warehouseId]
+    return state and math.max(0, Crypto.ToInt(state.gpuStock, 0)) or 0
+end
+
+function WH.SetGpuStock(warehouseId, amount)
+    local state = WH.state[warehouseId]
+    if not state then
+        return false
+    end
+
+    state.gpuStock = math.max(0, Crypto.ToInt(amount, 0))
+    MarkWarehouseDirty(warehouseId)
+    WH.Sync(warehouseId)
+    return true
 end
 
 function WH.CountGpus(warehouseId)
@@ -164,6 +185,7 @@ function WH.Load()
             state.totalMined = Crypto.ToNumber(row.total_mined, 0)
             state.totalEarned = Crypto.ToInt(row.total_earned, 0)
             state.robbedAt = Crypto.ToInt(row.robbed_at, 0)
+            state.gpuStock = math.max(0, Crypto.ToInt(row.gpu_stock, 0))
 
             if state.lastTick <= 0 then
                 state.lastTick = os.time()
@@ -205,8 +227,8 @@ local function SaveWarehouse(warehouseId)
 
     DB.Execute([[
         INSERT INTO `codex_crypto_warehouses`
-            (`warehouse_id`, `owner`, `owner_name`, `btc`, `bill`, `powered`, `locked`, `last_tick`, `total_mined`, `total_earned`, `robbed_at`)
-        VALUES (@id, @owner, @owner_name, @btc, @bill, @powered, @locked, @last_tick, @total_mined, @total_earned, @robbed_at)
+            (`warehouse_id`, `owner`, `owner_name`, `btc`, `bill`, `powered`, `locked`, `last_tick`, `total_mined`, `total_earned`, `robbed_at`, `gpu_stock`)
+        VALUES (@id, @owner, @owner_name, @btc, @bill, @powered, @locked, @last_tick, @total_mined, @total_earned, @robbed_at, @gpu_stock)
         ON DUPLICATE KEY UPDATE
             `owner` = VALUES(`owner`),
             `owner_name` = VALUES(`owner_name`),
@@ -217,7 +239,8 @@ local function SaveWarehouse(warehouseId)
             `last_tick` = VALUES(`last_tick`),
             `total_mined` = VALUES(`total_mined`),
             `total_earned` = VALUES(`total_earned`),
-            `robbed_at` = VALUES(`robbed_at`)
+            `robbed_at` = VALUES(`robbed_at`),
+            `gpu_stock` = VALUES(`gpu_stock`)
     ]], {
         ['@id'] = state.id,
         -- Empty string instead of nil: a nil parameter would be dropped by the
@@ -231,7 +254,8 @@ local function SaveWarehouse(warehouseId)
         ['@last_tick'] = math.floor(state.lastTick),
         ['@total_mined'] = Crypto.Round(state.totalMined, 8),
         ['@total_earned'] = math.floor(state.totalEarned),
-        ['@robbed_at'] = math.floor(state.robbedAt)
+        ['@robbed_at'] = math.floor(state.robbedAt),
+        ['@gpu_stock'] = math.max(0, Crypto.ToInt(state.gpuStock, 0))
     })
 end
 
@@ -767,6 +791,7 @@ function WH.Serialize(warehouseId, identifier)
         totalMined = Crypto.Round(state.totalMined, 6),
         totalEarned = math.floor(state.totalEarned),
         storageLimit = Crypto.ToNumber(Config.Mining.StorageLimit, 0),
+        gpuStock = math.max(0, Crypto.ToInt(state.gpuStock, 0)),
         prices = {
             rig = Crypto.ToInt(Config.Mining.RigPrice, 9000),
             cpu = Crypto.ToInt(Config.Mining.Cpu.Price, 4500),

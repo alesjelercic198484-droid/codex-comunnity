@@ -24,6 +24,11 @@ Locales['fr'] = {
     ['warehouse_panel'] = 'Terminal de gestion',
     ['warehouse_power'] = 'Tableau electrique',
     ['warehouse_storage'] = 'Stockage GPU',
+    ['storage_deposited'] = '%d GPU stockes. Stock : %d.',
+    ['storage_withdrew'] = '%d GPU preleves. Stock : %d.',
+    ['storage_empty'] = 'Rien a stocker ou a prendre.',
+    ['storage_cannot_carry'] = 'Tu ne peux pas porter les GPU stockes.',
+    ['storage_failed'] = 'Le stockage n a pas pu etre mis a jour.',
     ['warehouse_blip'] = 'Entrepot Crypto',
     ['keys_given'] = 'Tu as donne les cles a %s.',
     ['keys_received'] = 'Tu as recu les cles de %s.',
@@ -102,6 +107,15 @@ Locales['fr'] = {
     ['target_rig_loot'] = 'Voler les GPU',
     ['target_door'] = 'Forcer la porte',
     ['press_to_open'] = 'Appuie sur ~INPUT_CONTEXT~ pour %s',
+
+    -- moniteur du rig (statut affiche sur chaque machine)
+    ['rig_monitor_title'] = 'Moniteur du rig #%s',
+    ['rig_monitor_banner'] = 'Statut en direct lu depuis le rig #%s',
+
+    -- skillcheck
+    ['skillcheck_title'] = 'Contourner la securite',
+    ['skillcheck_door'] = 'Crocheter la serrure',
+    ['skillcheck_rig'] = 'Pirater le rig',
 
     -- admin
     ['admin_only'] = 'Tu n as pas le droit d utiliser cette commande.',

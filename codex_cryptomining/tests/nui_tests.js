@@ -406,6 +406,82 @@ function makeWarehouse(overrides) {
     equals(brokerRequest.body.action, 'buyWarehouse', 'buyWarehouse action sent');
     equals(brokerRequest.body.warehouseId, 'paleto', 'the right warehouse id is sent');
 
+    group('Built-in overlays');
+
+    // Toast notifications (no dependency).
+    send({ action: 'notify', message: 'Rig installed', type: 'success' });
+    await flush();
+    let toasts = Array.prototype.slice.call(document.querySelectorAll('#toasts .toast'));
+    ok(toasts.length >= 1, 'a toast is created on notify');
+    ok(toasts.some((t) => t.textContent.indexOf('Rig installed') !== -1), 'the toast shows the message');
+    ok(toasts.some((t) => t.classList.contains('success')), 'the toast carries its type');
+
+    // A malformed notify must not crash.
+    let notifyCrash = false;
+    try {
+        send({ action: 'notify' });
+        await flush();
+    } catch (error) {
+        notifyCrash = true;
+    }
+    ok(!notifyCrash, 'a malformed notify never crashes');
+
+    // Progress bar (no dependency).
+    sentRequests.length = 0;
+    send({ action: 'progress', label: 'Repairing', duration: 120 });
+    await flush();
+    ok(!$('#progress').classList.contains('hidden'), 'the progress bar is shown');
+    equals($('#progress-label').textContent, 'Repairing', 'the progress bar shows its label');
+    // Wait for it to finish and report back.
+    await new Promise((resolve) => setTimeout(resolve, 320));
+    ok($('#progress').classList.contains('hidden'), 'the progress bar hides when done');
+    ok(sentRequests.some((request) => request.endpoint === 'progressDone'), 'progressDone is reported');
+
+    // Skillcheck (no dependency).
+    sentRequests.length = 0;
+    send({ action: 'skillcheck', rounds: ['easy'], title: 'Pick the lock', key: 'E' });
+    await flush();
+    ok(!$('#skillcheck').classList.contains('hidden'), 'the skillcheck is shown');
+    equals($('#skill-title').textContent, 'Pick the lock', 'the skillcheck shows its title');
+    ok(document.querySelectorAll('#skill-rounds .skill-dot').length === 1, 'one round dot is rendered');
+    // Pressing Escape aborts the skillcheck and reports a failure.
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await flush();
+    ok($('#skillcheck').classList.contains('hidden'), 'the skillcheck closes on escape');
+    const skillReport = sentRequests.find((request) => request.endpoint === 'skillcheckDone');
+    ok(skillReport && skillReport.body.ok === false, 'aborting the skillcheck reports a failure');
+
+    group('Rig monitor');
+
+    // The rig's own computer opens the panel with a "live from this rig" banner.
+    send({ action: 'open', warehouse: makeWarehouse(), market });
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+
+    ok(!$('#rig-monitor').classList.contains('hidden'), 'the monitor banner is shown');
+    equals($('#rig-monitor-text').textContent, 'Live status read from rig #1', 'the banner names the rig');
+    ok(!document.querySelector('.tab[data-tab="rigs"]').classList.contains('hidden'), 'the rigs tab stays available');
+    ok($('.rig[data-rig-id="1"]').classList.contains('selected'), 'the rig card is selected');
+
+    // A plain terminal interaction shows no banner.
+    send({ action: 'selectRig', rigId: 2 });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'the banner hides without monitor context');
+
+    // Reopening the panel from the terminal resets the banner.
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+    send({ action: 'open', warehouse: makeWarehouse(), market });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'terminal open resets the banner');
+
+    // Closing also resets it.
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+    send({ action: 'close' });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'closing resets the banner');
+
     group('Closing');
 
     sentRequests.length = 0;

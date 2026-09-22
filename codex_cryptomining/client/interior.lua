@@ -14,7 +14,7 @@ local RESOURCE = GetCurrentResourceName()
 Interior.current = nil      -- warehouse id the player is inside
 Interior.data = nil         -- last serialized warehouse
 Interior.entities = {}      -- every spawned entity
-Interior.rigEntities = {}   -- rigId -> { chassis, gpus = {}, cooler }
+Interior.rigEntities = {}   -- rigId -> { chassis, gpus = {}, cooler, monitor }
 Interior.targetHandles = {} -- target ids to clean up
 Interior.loadedIpls = {}
 
@@ -93,6 +93,25 @@ function Interior.LoadIpls(interiorConfig)
         if not IsIplActive(ipl) then
             RequestIpl(ipl)
             Interior.loadedIpls[ipl] = true
+
+            -- Wait for the shell to actually come online. The base game
+            -- Import/Export warehouse only becomes solid once the IPL is
+            -- active, otherwise the player would drop through the floor.
+            local timeout = GetGameTimer() + 3000
+            while not IsIplActive(ipl) and GetGameTimer() < timeout do
+                Wait(10)
+            end
+        end
+    end
+
+    -- Refresh the interior instance at the entrance so its rooms / portals are
+    -- rebuilt. Without this the interior can render as an empty void the first
+    -- time a player enters after the IPL was requested.
+    local enter = interiorConfig.enter
+    if enter then
+        local interiorId = GetInteriorAtCoords(enter.x, enter.y, enter.z)
+        if interiorId and interiorId ~= 0 then
+            RefreshInterior(interiorId)
         end
     end
 end
@@ -140,6 +159,7 @@ local function ClearRigEntities(rigId)
     DeleteEntitySafe(bundle.chassis)
     DeleteEntitySafe(bundle.base)
     DeleteEntitySafe(bundle.cooler)
+    DeleteEntitySafe(bundle.monitor)
 
     for _, gpu in ipairs(bundle.gpus or {}) do
         DeleteEntitySafe(gpu)
@@ -247,6 +267,16 @@ function Interior.BuildRig(warehouseType, rig)
         local offset = coolerConfig.offset or vector3(0.0, -0.4, 0.0)
         local position = GetOffsetFromEntityInWorldCoords(bundle.chassis, offset.x, offset.y, offset.z)
         bundle.cooler = SpawnProp(coolerConfig.model, position, slot.w, propConfig.Fallback)
+    end
+
+    -- Monitor on the rig: the in-world computer that shows the rig / wallet
+    -- status when the player interacts with it.
+    local monitorConfig = propConfig.Monitor or {}
+    if monitorConfig.enabled then
+        local moffset = monitorConfig.offset or vector3(0.0, -0.6, 0.95)
+        local mposition = GetOffsetFromEntityInWorldCoords(bundle.chassis, moffset.x, moffset.y, moffset.z)
+        bundle.monitor = SpawnProp(monitorConfig.model, mposition,
+            (slot.w + Crypto.ToNumber(monitorConfig.heading, 180.0)) % 360.0, propConfig.Fallback)
     end
 
     if rig.broken then

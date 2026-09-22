@@ -19,13 +19,25 @@ end
 --- Runs the configured lockpick / hacking minigame. Returns a boolean.
 function RobClient.PlayMinigame(kind)
     local settings = Config.Robbery.Minigames or {}
-    local mode = kind == 'door' and (settings.Door or 'none') or (settings.Rig or 'none')
+    local mode = kind == 'door' and (settings.Door or 'builtin') or (settings.Rig or 'builtin')
 
     if mode == 'none' then
         return true
     end
 
     local difficulty = settings.Difficulty or { 'easy' }
+
+    -- Built-in skillcheck: our own NUI minigame, zero dependency (default).
+    if mode == 'builtin' then
+        if type(CodexCryptoSkillcheck) == 'function' then
+            local title = kind == 'door' and Crypto.L('skillcheck_door') or Crypto.L('skillcheck_rig')
+            local ok, result = pcall(CodexCryptoSkillcheck, difficulty, title)
+            return ok and result == true
+        end
+
+        -- Should never happen (main.lua defines it), but stay non-blocking.
+        return true
+    end
 
     if mode == 'ox_skillcheck' and IsStarted('ox_lib') then
         local ok, result = pcall(function()
@@ -70,15 +82,15 @@ function RobClient.PlayMinigame(kind)
         return Citizen.Await(promiseObject) == true
     end
 
-    -- ox_lib fallback when the configured resource is missing.
-    if IsStarted('ox_lib') then
-        local ok, result = pcall(function()
-            return lib.skillCheck(difficulty, { 'w', 'a', 's', 'd' })
-        end)
+    -- Configured resource missing: fall back to the built-in skillcheck so the
+    -- robbery still has a challenge without pulling in any dependency.
+    if type(CodexCryptoSkillcheck) == 'function' then
+        local title = kind == 'door' and Crypto.L('skillcheck_door') or Crypto.L('skillcheck_rig')
+        local ok, result = pcall(CodexCryptoSkillcheck, difficulty, title)
         return ok and result == true
     end
 
-    -- Nothing available: do not block the player.
+    -- Absolutely nothing available: do not block the player.
     Crypto.DebugPrint(('Minigame "%s" is not available, skipping.'):format(tostring(mode)))
     return true
 end
