@@ -93,6 +93,25 @@ function Interior.LoadIpls(interiorConfig)
         if not IsIplActive(ipl) then
             RequestIpl(ipl)
             Interior.loadedIpls[ipl] = true
+
+            -- Wait for the shell to actually come online. The base game
+            -- Import/Export warehouse only becomes solid once the IPL is
+            -- active, otherwise the player would drop through the floor.
+            local timeout = GetGameTimer() + 3000
+            while not IsIplActive(ipl) and GetGameTimer() < timeout do
+                Wait(10)
+            end
+        end
+    end
+
+    -- Refresh the interior instance at the entrance so its rooms / portals are
+    -- rebuilt. Without this the interior can render as an empty void the first
+    -- time a player enters after the IPL was requested.
+    local enter = interiorConfig.enter
+    if enter then
+        local interiorId = GetInteriorAtCoords(enter.x, enter.y, enter.z)
+        if interiorId and interiorId ~= 0 then
+            RefreshInterior(interiorId)
         end
     end
 end

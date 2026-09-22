@@ -2,7 +2,7 @@
 
 An advanced, server-authoritative **ESX** crypto mining economy for FiveM: buy warehouses, fill them with real mining rig props, upgrade and maintain them, pay the electricity, watch a live Bitcoin market, and get robbed by other players.
 
-Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**334 tests**).
+Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**361 tests**).
 
 ---
 
@@ -32,7 +32,14 @@ Instead it *uses* props and interiors that already ship with GTA V, spawning the
 | Power panel | `prop_elecbox_16` |
 | Storage | `prop_box_wood04a` |
 
-Interiors are the base game **biker warehouse** and **gunrunning bunker**, loaded by IPL.
+Both facility sizes reuse the base game **Import / Export vehicle warehouse** (the Finance & Felony DLC garage), loaded by its IPL:
+
+| | Value |
+|---|---|
+| IPL | `imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_` |
+| Anchor coords | `994.5925, -3002.594, -39.64699` |
+
+Every interior coordinate (entrance, terminal, power panel, storage, and the rig grid) is built around that single verified anchor, so nothing can spawn in the void. A test asserts the IPL is loaded and that every point stays inside the room. The IPL is requested on entry and the interior is refreshed with `RefreshInterior`, so the shell is always solid before the player is teleported in. Routing buckets keep every owner in their own private copy of that shared interior.
 
 **What this means for you:** it works on a vanilla server with zero extra downloads. But these are re-used Rockstar props — a server rack standing in for a mining rig. It is *not* a custom-modelled mining rig or a bespoke MLO like a paid Tebex script would include. If you want custom models, stream your own and change the names in `Config.Props` / `Config.Interiors` (`mlo = true`); the code is built for that and validates every model at runtime, falling back safely if one is missing.
 
@@ -42,7 +49,7 @@ Every model name above is verified by an automated test, so a typo can't silentl
 
 ### Mining rigs (real props)
 - Rig chassis, GPU stacks, and cooler props are spawned inside the interior and update live as you install hardware.
-- Rig slots are generated as a grid, so a 60-slot bunker needs zero hand-written coordinates.
+- Rig slots are generated as a grid, so a 24-slot warehouse needs zero hand-written coordinates.
 - Up to 8 GPUs per rig (configurable).
 - **CPU upgrade** — increases the hashrate multiplier.
 - **Cooler upgrade** — reduces wear and breakdown chance (spawns a visible fan prop).
@@ -68,21 +75,22 @@ Every model name above is verified by an automated test, so a typo can't silentl
 - Concurrent robberies with a configurable server-wide limit.
 - Minimum police requirement, player cooldown, and warehouse cooldown.
 - Lockpick + hacking USB requirements, consumed on entry.
-- Minigames: `ox_lib` skill check, `t3_lockpick`, `qb-lockpick`, `howdy-hackminigame`, `memorygame` — auto-detected with a safe fallback.
+- Minigames: **built-in skillcheck** (default, no dependency), plus optional `ox_lib` skill check, `t3_lockpick`, `qb-lockpick`, `howdy-hackminigame`, `memorygame` — auto-detected with a safe fallback.
 - Loot each rig once; the job ends automatically when the warehouse is empty or on timeout.
 - Owner notification + police dispatch.
 
-### Integrations (all auto-detected)
-| Type | Supported |
-|---|---|
-| Target | `ox_target`, `qb-target`, built-in TextUI fallback |
-| Inventory | `ox_inventory`, ESX inventory |
-| Notifications | `ox_lib`, ESX, native fallback |
-| Progress bar | `ox_lib`, ESX, native busy spinner |
-| Database | `oxmysql`, `mysql-async`, `ghmattimysql` |
-| Dispatch | `cd_dispatch`, `qs-dispatch`, `ps-dispatch`, `core_dispatch`, `rcore_dispatch`, custom event |
+### Integrations (all optional, auto-detected)
+| Type | Default (zero dependency) | Optional |
+|---|---|---|
+| Notifications | **built-in toast UI** | `ox_lib`, ESX |
+| Progress bar | **built-in progress bar** | `ox_lib`, ESX |
+| Skillcheck | **built-in minigame** | `ox_lib`, lockpick/hack resources |
+| Target | built-in TextUI fallback | `ox_target`, `qb-target` |
+| Inventory | ESX inventory | `ox_inventory` |
+| Database | — | `oxmysql`, `mysql-async`, `ghmattimysql` |
+| Dispatch | — | `cd_dispatch`, `qs-dispatch`, `ps-dispatch`, `core_dispatch`, `rcore_dispatch`, custom event |
 
-**The only hard requirement is `es_extended` and a MySQL resource.** Everything else is optional and degrades gracefully.
+**The only hard requirements are `es_extended` and a MySQL resource (`oxmysql`).** Everything else is optional and degrades gracefully — the notifications, progress bar and robbery skillcheck are all rendered by the resource's own NUI, so **`ox_lib` is not needed**. `ox_inventory` and `ox_target` are used automatically when present.
 
 ---
 
@@ -254,12 +262,12 @@ The resource ships with a real test suite that boots the actual server scripts o
 ```bash
 cd codex_cryptomining
 
-# Server logic - 223 tests (needs lupa: pip install lupa)
+# Server logic - 237 tests (needs lupa: pip install lupa)
 python3 tests/run_lua_tests.py
 # or, with a system Lua 5.4:
 lua tests/run_tests.lua
 
-# Interface - 73 tests (needs jsdom: npm install --no-save jsdom)
+# Interface - 86 tests (needs jsdom: npm install --no-save jsdom)
 node tests/nui_tests.js
 
 # SQL schema & queries - 38 tests (needs sqlglot: pip install sqlglot)

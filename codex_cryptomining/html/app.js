@@ -595,10 +595,289 @@
         }
     });
 
+    // ------------------------------------------------------- built-in toast
+    function notify(payload) {
+        var container = $('#toasts');
+        if (!container) {
+            return;
+        }
+
+        var position = (payload && payload.position) || 'top-right';
+        container.className = 'toasts'
+            + (position.indexOf('left') !== -1 ? ' left' : '')
+            + (position.indexOf('bottom') !== -1 ? ' bottom' : '');
+
+        var type = (payload && payload.type) || 'inform';
+        var duration = Number(payload && payload.duration) || 5000;
+
+        var toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+
+        var title = document.createElement('span');
+        title.className = 'toast-title';
+        title.textContent = (payload && payload.title) || 'Crypto Mining';
+
+        var body = document.createElement('span');
+        body.textContent = (payload && payload.message) || '';
+
+        toast.appendChild(title);
+        toast.appendChild(body);
+        container.appendChild(toast);
+
+        window.setTimeout(function () {
+            toast.classList.add('out');
+            window.setTimeout(function () {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 260);
+        }, duration);
+    }
+
+    // ---------------------------------------------------- built-in progress
+    var progressTimer = null;
+
+    function startProgress(payload) {
+        var wrap = $('#progress');
+        var fill = $('#progress-fill');
+        var label = $('#progress-label');
+        if (!wrap || !fill || !label) {
+            return;
+        }
+
+        if (progressTimer) {
+            window.clearInterval(progressTimer);
+            progressTimer = null;
+        }
+
+        var duration = Math.max(100, Number(payload && payload.duration) || 3000);
+        label.textContent = (payload && payload.label) || 'Working...';
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+        wrap.classList.remove('hidden');
+
+        var start = Date.now();
+        // Force a reflow so the reset width applies before we animate.
+        void fill.offsetWidth;
+        fill.style.transition = 'width 0.1s linear';
+
+        progressTimer = window.setInterval(function () {
+            var ratio = Math.min(1, (Date.now() - start) / duration);
+            fill.style.width = (ratio * 100).toFixed(1) + '%';
+
+            if (ratio >= 1) {
+                window.clearInterval(progressTimer);
+                progressTimer = null;
+                wrap.classList.add('hidden');
+                post('progressDone', { ok: true });
+            }
+        }, 60);
+    }
+
+    function cancelProgress() {
+        if (progressTimer) {
+            window.clearInterval(progressTimer);
+            progressTimer = null;
+        }
+        var wrap = $('#progress');
+        if (wrap) {
+            wrap.classList.add('hidden');
+        }
+    }
+
+    // -------------------------------------------------- built-in skillcheck
+    var skill = null;
+
+    var SKILL_PRESETS = {
+        easy: { speed: 0.85, zone: 26 },
+        medium: { speed: 1.35, zone: 19 },
+        hard: { speed: 1.95, zone: 13 }
+    };
+
+    function endSkill(success) {
+        if (!skill) {
+            return;
+        }
+
+        if (skill.raf) {
+            window.cancelAnimationFrame(skill.raf);
+        }
+
+        var wrap = $('#skillcheck');
+        if (wrap) {
+            wrap.classList.add('hidden');
+        }
+
+        document.removeEventListener('keydown', skill.onKey);
+        skill = null;
+        post('skillcheckDone', { ok: success === true });
+    }
+
+    function nextRound() {
+        if (!skill) {
+            return;
+        }
+
+        if (skill.round >= skill.rounds.length) {
+            endSkill(true);
+            return;
+        }
+
+        var preset = SKILL_PRESETS[skill.rounds[skill.round]] || SKILL_PRESETS.easy;
+        var zoneWidth = preset.zone;
+        // Random zone position keeping it fully inside the track.
+        var zoneStart = 8 + Math.random() * (100 - zoneWidth - 16);
+
+        skill.zoneStart = zoneStart;
+        skill.zoneWidth = zoneWidth;
+        skill.pos = 0;
+        skill.dir = 1;
+        skill.speed = preset.speed;
+
+        var zone = $('#skill-zone');
+        var track = $('#skill-track') || $('.skill-track');
+        if (track) {
+            track.classList.remove('hit', 'miss');
+        }
+        if (zone) {
+            zone.style.left = zoneStart + '%';
+            zone.style.width = zoneWidth + '%';
+        }
+
+        renderSkillDots();
+
+        var last = null;
+        function frame(now) {
+            if (!skill) {
+                return;
+            }
+            if (last === null) {
+                last = now;
+            }
+            var dt = (now - last) / 16.6667;
+            last = now;
+
+            skill.pos += skill.dir * skill.speed * dt;
+            if (skill.pos >= 100) {
+                skill.pos = 100;
+                skill.dir = -1;
+            } else if (skill.pos <= 0) {
+                skill.pos = 0;
+                skill.dir = 1;
+            }
+
+            var cursor = $('#skill-cursor');
+            if (cursor) {
+                cursor.style.left = skill.pos + '%';
+            }
+
+            skill.raf = window.requestAnimationFrame(frame);
+        }
+
+        skill.raf = window.requestAnimationFrame(frame);
+    }
+
+    function renderSkillDots() {
+        var container = $('#skill-rounds');
+        if (!container || !skill) {
+            return;
+        }
+        container.innerHTML = '';
+        for (var i = 0; i < skill.rounds.length; i += 1) {
+            var dot = document.createElement('span');
+            dot.className = 'skill-dot'
+                + (i < skill.round ? ' done' : '')
+                + (i === skill.round ? ' active' : '');
+            container.appendChild(dot);
+        }
+    }
+
+    function attemptSkill() {
+        if (!skill) {
+            return;
+        }
+
+        var track = $('.skill-track');
+        var inside = skill.pos >= skill.zoneStart && skill.pos <= (skill.zoneStart + skill.zoneWidth);
+
+        if (skill.raf) {
+            window.cancelAnimationFrame(skill.raf);
+            skill.raf = null;
+        }
+
+        if (inside) {
+            if (track) {
+                track.classList.add('hit');
+            }
+            skill.round += 1;
+            renderSkillDots();
+            window.setTimeout(nextRound, 180);
+        } else {
+            if (track) {
+                track.classList.add('miss');
+            }
+            window.setTimeout(function () {
+                endSkill(false);
+            }, 220);
+        }
+    }
+
+    function startSkillcheck(payload) {
+        var wrap = $('#skillcheck');
+        if (!wrap) {
+            post('skillcheckDone', { ok: false });
+            return;
+        }
+
+        var rounds = (payload && payload.rounds) || ['easy'];
+        if (!Array.isArray(rounds) || rounds.length === 0) {
+            rounds = ['easy'];
+        }
+
+        var keyLabel = (payload && payload.key) || 'E';
+        text('#skill-title', (payload && payload.title) || 'Bypass security');
+        text('#skill-key', keyLabel);
+
+        skill = {
+            rounds: rounds,
+            round: 0,
+            raf: null,
+            onKey: function (event) {
+                var pressed = String(event.key || '').toUpperCase();
+                if (pressed === keyLabel.toUpperCase() || event.code === 'Space' && keyLabel === 'E') {
+                    event.preventDefault();
+                    attemptSkill();
+                } else if (pressed === 'ESCAPE') {
+                    endSkill(false);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', skill.onKey);
+        wrap.classList.remove('hidden');
+        nextRound();
+    }
+
     window.addEventListener('message', function (event) {
         var data = event.data || {};
 
         switch (data.action) {
+            case 'notify':
+                notify(data);
+                break;
+
+            case 'progress':
+                startProgress(data);
+                break;
+
+            case 'progressCancel':
+                cancelProgress();
+                break;
+
+            case 'skillcheck':
+                startSkillcheck(data);
+                break;
+
             case 'open':
                 renderPanel(data.warehouse);
                 if (data.market) {

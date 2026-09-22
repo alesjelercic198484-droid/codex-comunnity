@@ -103,6 +103,11 @@ Locales['fr'] = {
     ['target_door'] = 'Forcer la porte',
     ['press_to_open'] = 'Appuie sur ~INPUT_CONTEXT~ pour %s',
 
+    -- skillcheck
+    ['skillcheck_title'] = 'Contourner la securite',
+    ['skillcheck_door'] = 'Crocheter la serrure',
+    ['skillcheck_rig'] = 'Pirater le rig',
+
     -- admin
     ['admin_only'] = 'Tu n as pas le droit d utiliser cette commande.',
     ['admin_reset'] = 'L entrepot %s a ete reinitialise.',

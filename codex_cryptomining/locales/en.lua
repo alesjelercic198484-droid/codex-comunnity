@@ -103,6 +103,11 @@ Locales['en'] = {
     ['target_door'] = 'Force the door',
     ['press_to_open'] = 'Press ~INPUT_CONTEXT~ to %s',
 
+    -- skillcheck
+    ['skillcheck_title'] = 'Bypass security',
+    ['skillcheck_door'] = 'Pick the lock',
+    ['skillcheck_rig'] = 'Bypass the rig',
+
     -- admin
     ['admin_only'] = 'You are not allowed to use this command.',
     ['admin_reset'] = 'Warehouse %s has been reset.',

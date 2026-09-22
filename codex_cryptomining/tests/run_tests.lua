@@ -113,6 +113,44 @@ for _, warehouse in ipairs(Config.Warehouses) do
     ok(interior ~= nil, ('warehouse %s has a valid interior'):format(warehouse.id))
 end
 
+-- Interiors must point at the base game Import / Export vehicle warehouse and
+-- keep every spawn point inside that room (anchor 994.5925, -3002.594, -39.647).
+-- A stray coordinate here means props / the player spawning in the void.
+local IMPEXP_IPL = 'imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_'
+local ANCHOR = { x = 994.5925, y = -3002.594, z = -39.64699 }
+
+local function within(point, radius)
+    if not point then
+        return false
+    end
+    local dx = (point.x or 0) - ANCHOR.x
+    local dy = (point.y or 0) - ANCHOR.y
+    local dz = (point.z or 0) - ANCHOR.z
+    return math.sqrt(dx * dx + dy * dy + dz * dz) <= radius
+end
+
+for typeName, interior in pairs(Config.Interiors) do
+    local iplOk = false
+    for _, ipl in ipairs(interior.ipls or {}) do
+        if ipl == IMPEXP_IPL then
+            iplOk = true
+        end
+    end
+    ok(iplOk, ('interior %s loads the Import/Export vehicle warehouse IPL'):format(typeName))
+    ok(within(interior.enter, 8.0), ('interior %s entrance sits inside the room'):format(typeName))
+    ok(within(interior.terminal, 12.0), ('interior %s terminal sits inside the room'):format(typeName))
+    ok(within(interior.power, 12.0), ('interior %s power panel sits inside the room'):format(typeName))
+    ok(within(interior.storage, 12.0), ('interior %s storage sits inside the room'):format(typeName))
+
+    local slotsInside = true
+    for _, slot in ipairs(interior.slots or {}) do
+        if not within(slot, 20.0) then
+            slotsInside = false
+        end
+    end
+    ok(slotsInside, ('every rig slot of interior %s stays inside the room'):format(typeName))
+end
+
 -- Locales must share the same keys.
 local missingLocale = {}
 for key in pairs(Locales.en) do
@@ -268,6 +306,16 @@ local balanceBefore = owner.accounts.bank
 result = Mock.CallCallback('codex_cryptomining:shopAction', 1, { action = 'buyWarehouse', warehouseId = thirdWarehouse.id })
 ok(result and not result.ok, 'ownership limit is enforced')
 equals(owner.accounts.bank, balanceBefore, 'no money taken when the limit blocks the purchase')
+
+-- Regression: right after buying, the owner must be able to walk to the
+-- entrance and actually enter the interior (the whole point of the purchase).
+owner.coords = vector3(firstWarehouse.entrance.x, firstWarehouse.entrance.y, firstWarehouse.entrance.z)
+local boughtEnter = Mock.CallCallback('codex_cryptomining:enterWarehouse', 1, firstWarehouse.id)
+ok(boughtEnter ~= nil and boughtEnter.warehouse ~= nil, 'a fresh owner can enter right after buying')
+ok(boughtEnter and boughtEnter.warehouse.isOwner == true, 'the buyer is recognised as the owner on entry')
+-- Put the player back in the world so later tests start clean.
+WH.RemoveViewer(1)
+WH.SetPlayerBucket(1, nil)
 
 -- ---------------------------------------------------------------------------
 group('Rigs & GPUs')

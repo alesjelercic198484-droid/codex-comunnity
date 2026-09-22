@@ -198,6 +198,36 @@
         </section>
     </div>
 
+    <!-- ================================================================= -->
+    <!-- BUILT-IN OVERLAYS (no external dependency)                          -->
+    <!-- These live outside #app so they render on their own, without the    -->
+    <!-- dark backdrop and without stealing focus (except the skillcheck).   -->
+    <!-- ================================================================= -->
+
+    <!-- Toast notifications -->
+    <div id="toasts" class="toasts"></div>
+
+    <!-- Progress bar -->
+    <div id="progress" class="progress hidden">
+        <div class="progress-box">
+            <span id="progress-label" class="progress-label">Working...</span>
+            <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+        </div>
+    </div>
+
+    <!-- Skillcheck minigame -->
+    <div id="skillcheck" class="skillcheck hidden">
+        <div class="skill-box">
+            <p id="skill-title" class="skill-title">Bypass security</p>
+            <div class="skill-track">
+                <div id="skill-zone" class="skill-zone"></div>
+                <div id="skill-cursor" class="skill-cursor"></div>
+            </div>
+            <p class="skill-hint">Press <kbd id="skill-key">E</kbd> when the marker is inside the bright zone</p>
+            <div id="skill-rounds" class="skill-rounds"></div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
