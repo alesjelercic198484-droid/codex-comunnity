@@ -210,17 +210,28 @@ Config.Market = {
 -- ---------------------------------------------------------------------------
 -- INTERIORS
 -- ---------------------------------------------------------------------------
--- Rig slots are generated as a grid so you do not have to write 60 vectors by
--- hand. Override `slots` with your own list if you use a custom MLO.
-local function GridSlots(origin, rows, cols, stepRight, stepForward, heading)
+-- Rig slots are generated as GPU banks split by a walkable central aisle, so
+-- you do not have to write dozens of vectors by hand and the player can walk
+-- up to every rig monitor. `gapCols` is how many column spacings are left
+-- empty in the middle of each row (the aisle). Override `slots` with your own
+-- list if you use a custom MLO.
+local function GridSlots(origin, rows, cols, stepRight, stepForward, heading, gapCols)
     local slots = {}
     local rad = math.rad(heading or 0.0)
     local rightX, rightY = math.cos(rad), math.sin(rad)
     local fwdX, fwdY = -math.sin(rad), math.cos(rad)
+    local halfBank = math.ceil(cols / 2)
+    local gridHalf = ((cols + (gapCols or 0)) * 0.5) - 0.5
 
     for row = 0, rows - 1 do
         for col = 0, cols - 1 do
-            local right = (col - (cols - 1) * 0.5) * stepRight
+            -- Columns in the right half of the row are pushed across the aisle.
+            local column = col
+            if column >= halfBank then
+                column = column + (gapCols or 0)
+            end
+
+            local right = (column - gridHalf) * stepRight
             local forward = row * stepForward
 
             slots[#slots + 1] = {
@@ -243,8 +254,9 @@ end
 --   Anchor: 994.5925, -3002.594, -39.64699   (upper level / vehicle floor)
 local IMPEXP_IPL = 'imp_impexp_interior_placement_interior_1_impexp_intwaremed_milo_'
 local IMPEXP_FLOOR = -39.64699
--- Grid origin sits ~2.5 m into the room so the entrance stays clear of the rigs.
-local IMPEXP_GRID = vector3(994.5925, -3005.10, IMPEXP_FLOOR)
+-- Grid origin sits ~4 m south of the entrance so the doorway and the storage
+-- crate stay clear of the first rig row.
+local IMPEXP_GRID = vector3(994.5925, -3006.50, IMPEXP_FLOOR)
 
 Config.Interiors = {
     -- Both facility sizes reuse the SAME base game Import / Export vehicle
@@ -271,8 +283,9 @@ Config.Interiors = {
         power = vector4(999.20, -3002.60, IMPEXP_FLOOR, 270.0), -- EDIT
         -- Storage crate used to drop / pick up GPUs, north of the entrance.
         storage = vector4(994.60, -3000.40, IMPEXP_FLOOR, 0.0), -- EDIT
-        -- 6 columns x 2 rows = 12 slots, laid out south of the entrance.
-        slots = GridSlots(IMPEXP_GRID, 2, 6, 1.60, 1.70, 180.0)
+        -- 6 columns x 2 rows = 12 slots in two banks, split by a ~4.8 m wide
+        -- central aisle so the player can reach every rig monitor.
+        slots = GridSlots(IMPEXP_GRID, 2, 6, 1.60, 1.70, 180.0, 2)
     },
     large = {
         label = 'Vehicle Warehouse (expanded)',
@@ -284,8 +297,9 @@ Config.Interiors = {
         terminal = vector4(990.00, -3002.60, IMPEXP_FLOOR, 90.0), -- EDIT
         power = vector4(999.20, -3002.60, IMPEXP_FLOOR, 270.0), -- EDIT
         storage = vector4(994.60, -3000.40, IMPEXP_FLOOR, 0.0), -- EDIT
-        -- 8 columns x 3 rows = 24 slots, a wider grid across the vehicle floor.
-        slots = GridSlots(IMPEXP_GRID, 3, 8, 1.60, 1.70, 180.0)
+        -- 8 columns x 3 rows = 24 slots in two banks, split by a ~4.8 m wide
+        -- central aisle so the player can reach every rig monitor.
+        slots = GridSlots(IMPEXP_GRID, 3, 8, 1.60, 1.70, 180.0, 2)
     }
 }
 
@@ -319,6 +333,17 @@ Config.Props = {
         model = 'gr_prop_bunker_deskfan_01a',
         enabled = true,
         offset = vector3(0.0, -0.45, 0.0)
+    },
+    -- Desktop monitor facing the aisle: this is the in-world computer the
+    -- player walks up to in order to read the rig / wallet status. Set
+    -- enabled = false to disable it (interactions still work without it).
+    Monitor = {
+        model = 'prop_monitor_03b',
+        enabled = true,
+        -- Offset from the rig chassis (local x, y, z): behind and above it.
+        offset = vector3(0.0, -0.62, 0.98),
+        -- Rotated 180° relative to the rig so the screen faces the aisle.
+        heading = 180.0
     },
     Terminal = { model = 'prop_laptop_01a', zOffset = 0.92, enabled = true },
     PowerBox = { model = 'prop_elecbox_16', zOffset = 0.0, enabled = true },

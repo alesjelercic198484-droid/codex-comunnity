@@ -103,6 +103,10 @@ Locales['fr'] = {
     ['target_door'] = 'Forcer la porte',
     ['press_to_open'] = 'Appuie sur ~INPUT_CONTEXT~ pour %s',
 
+    -- moniteur du rig (statut affiche sur chaque machine)
+    ['rig_monitor_title'] = 'Moniteur du rig #%s',
+    ['rig_monitor_banner'] = 'Statut en direct lu depuis le rig #%s',
+
     -- skillcheck
     ['skillcheck_title'] = 'Contourner la securite',
     ['skillcheck_door'] = 'Crocheter la serrure',

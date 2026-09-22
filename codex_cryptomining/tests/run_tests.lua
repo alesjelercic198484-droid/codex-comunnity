@@ -149,6 +149,34 @@ for typeName, interior in pairs(Config.Interiors) do
         end
     end
     ok(slotsInside, ('every rig slot of interior %s stays inside the room'):format(typeName))
+
+    -- Rig banks must leave a walkable central aisle: two column spacings are
+    -- deliberately skipped in the middle of every row.
+    local aisleFound = false
+    local rowsByY = {}
+    for _, slot in ipairs(interior.slots or {}) do
+        local rowKey = math.floor((slot.y or 0) * 100 + 0.5)
+        rowsByY[rowKey] = rowsByY[rowKey] or {}
+        rowsByY[rowKey][#rowsByY[rowKey] + 1] = slot.x or 0
+    end
+    for _, xs in pairs(rowsByY) do
+        table.sort(xs)
+        for index = 2, #xs do
+            if (xs[index] - xs[index - 1]) > 2.5 * 1.60 then
+                aisleFound = true
+            end
+        end
+    end
+    ok(aisleFound, ('interior %s rig banks leave a walkable central aisle'):format(typeName))
+
+    -- Every rig faces the entrance / aisle so its monitor reads toward the player.
+    local facingOk = true
+    for _, slot in ipairs(interior.slots or {}) do
+        if math.abs(((slot.w or 0) % 360.0) - 180.0) > 0.01 then
+            facingOk = false
+        end
+    end
+    ok(facingOk, ('every rig of interior %s faces the entrance'):format(typeName))
 end
 
 -- Locales must share the same keys.
@@ -182,7 +210,10 @@ local KNOWN_PROPS = {
     ['prop_elecbox_20'] = true,
     ['prop_box_wood04a'] = true,
     ['prop_table_03'] = true,
-    ['prop_table_03b'] = true
+    ['prop_table_03b'] = true,
+    ['prop_monitor_03b'] = true,
+    ['prop_monitor_02'] = true,
+    ['prop_monitor_04'] = true
 }
 
 local KNOWN_PEDS = {
@@ -206,6 +237,7 @@ checkProp(Config.Props.BrokenModel, 'broken rig')
 checkProp(Config.Props.Rig.base and Config.Props.Rig.base.model, 'rig base')
 checkProp(Config.Props.Gpu.model, 'gpu')
 checkProp(Config.Props.Cooler.model, 'cooler')
+checkProp(Config.Props.Monitor and Config.Props.Monitor.model, 'rig monitor')
 checkProp(Config.Props.Terminal.model, 'terminal')
 checkProp(Config.Props.PowerBox.model, 'power box')
 checkProp(Config.Props.Storage.model, 'storage')

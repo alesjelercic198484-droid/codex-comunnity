@@ -724,12 +724,19 @@ local function BuildInteriorTargets(data, robbery, lootable)
                     end, 1.8)
                 end
             else
-                AddTargetPoint(name, slot, ('%s #%s'):format(Crypto.L('target_rig'), rig.slot), 'fa-solid fa-microchip', function()
+                -- Every rig is also the computer you read the crypto status
+                -- on: walk to the rig monitor and it opens the panel already
+                -- focused on that rig, with a "live from this rig" banner.
+                AddTargetPoint(name, slot, Crypto.L('rig_monitor_title', rig.slot), 'fa-solid fa-desktop', function()
                     local fresh = ServerCallback('getWarehouse', currentWarehouse)
 
                     if fresh then
                         OpenPanel(fresh)
-                        SendNUIMessage({ action = 'selectRig', rigId = rigId })
+                        SendNUIMessage({
+                            action = 'selectRig',
+                            rigId = rigId,
+                            monitor = Crypto.L('rig_monitor_banner', rig.slot)
+                        })
                     end
                 end, 1.8)
             end

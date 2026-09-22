@@ -14,7 +14,7 @@ local RESOURCE = GetCurrentResourceName()
 Interior.current = nil      -- warehouse id the player is inside
 Interior.data = nil         -- last serialized warehouse
 Interior.entities = {}      -- every spawned entity
-Interior.rigEntities = {}   -- rigId -> { chassis, gpus = {}, cooler }
+Interior.rigEntities = {}   -- rigId -> { chassis, gpus = {}, cooler, monitor }
 Interior.targetHandles = {} -- target ids to clean up
 Interior.loadedIpls = {}
 
@@ -159,6 +159,7 @@ local function ClearRigEntities(rigId)
     DeleteEntitySafe(bundle.chassis)
     DeleteEntitySafe(bundle.base)
     DeleteEntitySafe(bundle.cooler)
+    DeleteEntitySafe(bundle.monitor)
 
     for _, gpu in ipairs(bundle.gpus or {}) do
         DeleteEntitySafe(gpu)
@@ -266,6 +267,16 @@ function Interior.BuildRig(warehouseType, rig)
         local offset = coolerConfig.offset or vector3(0.0, -0.4, 0.0)
         local position = GetOffsetFromEntityInWorldCoords(bundle.chassis, offset.x, offset.y, offset.z)
         bundle.cooler = SpawnProp(coolerConfig.model, position, slot.w, propConfig.Fallback)
+    end
+
+    -- Monitor on the rig: the in-world computer that shows the rig / wallet
+    -- status when the player interacts with it.
+    local monitorConfig = propConfig.Monitor or {}
+    if monitorConfig.enabled then
+        local moffset = monitorConfig.offset or vector3(0.0, -0.6, 0.95)
+        local mposition = GetOffsetFromEntityInWorldCoords(bundle.chassis, moffset.x, moffset.y, moffset.z)
+        bundle.monitor = SpawnProp(monitorConfig.model, mposition,
+            (slot.w + Crypto.ToNumber(monitorConfig.heading, 180.0)) % 360.0, propConfig.Fallback)
     end
 
     if rig.broken then

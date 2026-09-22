@@ -2,7 +2,7 @@
 
 An advanced, server-authoritative **ESX** crypto mining economy for FiveM: buy warehouses, fill them with real mining rig props, upgrade and maintain them, pay the electricity, watch a live Bitcoin market, and get robbed by other players.
 
-Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**361 tests**).
+Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**373 tests**).
 
 ---
 
@@ -27,6 +27,7 @@ Instead it *uses* props and interiors that already ship with GTA V, spawning the
 | Rig chassis | `hei_prop_mini_sever_01` (small server rack) |
 | Broken rig | `hei_prop_mini_sever_broken` |
 | GPU (stacked per GPU) | `ex_office_swag_electronic` |
+| Rig monitor (the "computer") | `prop_monitor_03b` |
 | Cooler | `gr_prop_bunker_deskfan_01a` |
 | Terminal | `prop_laptop_01a` |
 | Power panel | `prop_elecbox_16` |
@@ -49,7 +50,8 @@ Every model name above is verified by an automated test, so a typo can't silentl
 
 ### Mining rigs (real props)
 - Rig chassis, GPU stacks, and cooler props are spawned inside the interior and update live as you install hardware.
-- Rig slots are generated as a grid, so a 24-slot warehouse needs zero hand-written coordinates.
+- Rig slots are generated as two GPU banks split by a walkable central aisle (~5 m wide), so every rig is reachable on foot and a 24-slot warehouse needs zero hand-written coordinates.
+- **Every rig is a computer**: a monitor prop faces the aisle and targeting it opens the warehouse panel already focused on that rig, with a "live status from this rig" banner. No phone app — you read your BTC balance, hash rate and earnings on the actual machines (or on the management terminal).
 - Up to 8 GPUs per rig (configurable).
 - **CPU upgrade** — increases the hashrate multiplier.
 - **Cooler upgrade** — reduces wear and breakdown chance (spawns a visible fan prop).
@@ -262,12 +264,12 @@ The resource ships with a real test suite that boots the actual server scripts o
 ```bash
 cd codex_cryptomining
 
-# Server logic - 237 tests (needs lupa: pip install lupa)
+# Server logic - 242 tests (needs lupa: pip install lupa)
 python3 tests/run_lua_tests.py
 # or, with a system Lua 5.4:
 lua tests/run_tests.lua
 
-# Interface - 86 tests (needs jsdom: npm install --no-save jsdom)
+# Interface - 93 tests (needs jsdom: npm install --no-save jsdom)
 node tests/nui_tests.js
 
 # SQL schema & queries - 38 tests (needs sqlglot: pip install sqlglot)

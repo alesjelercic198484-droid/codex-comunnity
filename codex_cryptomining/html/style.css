@@ -165,6 +165,35 @@ html, body {
     border-bottom: 1px solid var(--line);
 }
 
+/* Rig monitor banner: shown when the panel was opened on a rig's computer. */
+.rig-monitor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    background: rgba(38, 217, 163, 0.08);
+    border-bottom: 1px solid var(--line);
+    color: var(--accent-2);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.rig-monitor .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 6px var(--accent-2);
+    animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
 .tab {
     padding: 14px 20px;
     background: none;

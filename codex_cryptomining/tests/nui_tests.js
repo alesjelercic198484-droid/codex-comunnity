@@ -451,6 +451,37 @@ function makeWarehouse(overrides) {
     const skillReport = sentRequests.find((request) => request.endpoint === 'skillcheckDone');
     ok(skillReport && skillReport.body.ok === false, 'aborting the skillcheck reports a failure');
 
+    group('Rig monitor');
+
+    // The rig's own computer opens the panel with a "live from this rig" banner.
+    send({ action: 'open', warehouse: makeWarehouse(), market });
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+
+    ok(!$('#rig-monitor').classList.contains('hidden'), 'the monitor banner is shown');
+    equals($('#rig-monitor-text').textContent, 'Live status read from rig #1', 'the banner names the rig');
+    ok(!document.querySelector('.tab[data-tab="rigs"]').classList.contains('hidden'), 'the rigs tab stays available');
+    ok($('.rig[data-rig-id="1"]').classList.contains('selected'), 'the rig card is selected');
+
+    // A plain terminal interaction shows no banner.
+    send({ action: 'selectRig', rigId: 2 });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'the banner hides without monitor context');
+
+    // Reopening the panel from the terminal resets the banner.
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+    send({ action: 'open', warehouse: makeWarehouse(), market });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'terminal open resets the banner');
+
+    // Closing also resets it.
+    send({ action: 'selectRig', rigId: 1, monitor: 'Live status read from rig #1' });
+    await flush();
+    send({ action: 'close' });
+    await flush();
+    ok($('#rig-monitor').classList.contains('hidden'), 'closing resets the banner');
+
     group('Closing');
 
     sentRequests.length = 0;

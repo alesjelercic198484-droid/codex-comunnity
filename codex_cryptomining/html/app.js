@@ -78,6 +78,10 @@
     function close() {
         showView(null);
         state.selectedRig = null;
+        var monitorBar = $('#rig-monitor');
+        if (monitorBar) {
+            monitorBar.classList.add('hidden');
+        }
         post('close', {});
     }
 
@@ -883,6 +887,10 @@
                 if (data.market) {
                     renderMarket(data.market);
                 }
+                var openMonitorBar = $('#rig-monitor');
+                if (openMonitorBar) {
+                    openMonitorBar.classList.add('hidden');
+                }
                 showView('panel');
                 break;
 
@@ -933,10 +941,24 @@
                 $all('.rig').forEach(function (element) {
                     element.classList.toggle('selected', Number(element.dataset.rigId) === state.selectedRig);
                 });
+                // Monitor context: the interaction happened on the rig's own
+                // computer screen, so show a "live from this rig" banner.
+                var monitorBar = $('#rig-monitor');
+                if (monitorBar) {
+                    var isMonitor = typeof data.monitor === 'string' && data.monitor.length > 0;
+                    monitorBar.classList.toggle('hidden', !isMonitor);
+                    if (isMonitor) {
+                        text('#rig-monitor-text', data.monitor);
+                    }
+                }
                 break;
 
             case 'close':
                 showView(null);
+                var closeMonitorBar = $('#rig-monitor');
+                if (closeMonitorBar) {
+                    closeMonitorBar.classList.add('hidden');
+                }
                 break;
 
             default:
