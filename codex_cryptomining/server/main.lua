@@ -129,6 +129,88 @@ AddEventHandler('esx:playerLoaded', function(playerId)
 end)
 
 -- ---------------------------------------------------------------------------
+-- GPU STORAGE
+-- ---------------------------------------------------------------------------
+-- The wooden crate inside the interior is a real storage. With ox_inventory
+-- it opens a registered stash chest; with the classic ESX inventory it is a
+-- "store all / take all" transfer persisted in the `gpu_stock` column.
+local function HandleStorageAction(source, warehouseId)
+    if not started or (Config.Storage and Config.Storage.Enabled == false) then
+        return nil
+    end
+
+    local identifier = FW.GetIdentifier(source)
+    local warehouse = Crypto.GetWarehouseConfig(warehouseId)
+
+    if not identifier or not warehouse or not WH.Get(warehouseId) then
+        return nil
+    end
+
+    if not WH.HasAccess(identifier, warehouseId) then
+        Reply(source, false, Crypto.L('no_access'))
+        return nil
+    end
+
+    if not IsNearWarehouse(source, warehouseId, true) then
+        Reply(source, false, Crypto.L('too_far'))
+        return nil
+    end
+
+    -- ox_inventory: a proper chest opened on the client.
+    if FW.GetInventoryType() == 'ox_inventory' and FW.IsStarted('ox_inventory') then
+        local stashId = ('codexcrypto_storage_%s'):format(warehouseId)
+
+        pcall(function()
+            exports.ox_inventory:RegisterStash(
+                stashId,
+                (Config.Storage and Config.Storage.Label) or 'GPU storage',
+                Crypto.ToInt(Config.Storage and Config.Storage.Slots, 40),
+                Crypto.ToNumber(Config.Storage and Config.Storage.MaxWeight, 250000),
+                false)
+        end)
+
+        return { ok = true, mode = 'stash', stashId = stashId }
+    end
+
+    -- Classic ESX inventory: deposit everything you carry, otherwise take
+    -- from the stock (as much as fits).
+    local carried = FW.GetItemCount(source, 'gpu')
+    local stock = WH.GetGpuStock(warehouseId)
+
+    if carried > 0 then
+        if not FW.RemoveItem(source, 'gpu', carried) then
+            Reply(source, false, Crypto.L('storage_failed'))
+            return nil
+        end
+
+        WH.SetGpuStock(warehouseId, stock + carried)
+        Reply(source, true, Crypto.L('storage_deposited', carried, stock + carried))
+
+        return { ok = true, mode = 'esx', action = 'deposited', count = carried, stock = stock + carried }
+    end
+
+    if stock <= 0 then
+        Reply(source, false, Crypto.L('storage_empty'))
+        return nil
+    end
+
+    local amount = stock
+    while amount > 0 and not FW.CanCarry(source, 'gpu', amount) do
+        amount = amount - 1
+    end
+
+    if amount <= 0 or not FW.AddItem(source, 'gpu', amount) then
+        Reply(source, false, Crypto.L('storage_cannot_carry'))
+        return nil
+    end
+
+    WH.SetGpuStock(warehouseId, stock - amount)
+    Reply(source, true, Crypto.L('storage_withdrew', amount, stock - amount))
+
+    return { ok = true, mode = 'esx', action = 'withdrew', count = amount, stock = stock - amount }
+end
+
+-- ---------------------------------------------------------------------------
 -- CALLBACKS
 -- ---------------------------------------------------------------------------
 local function RegisterCallback(name, handler)
@@ -255,6 +337,23 @@ CreateThread(function()
     end)
 
     -- Single entry point for every panel action.
+    RegisterCallback('storageAction', function(source, cb, warehouseId)
+        if not Lock(source) then
+            return cb({ ok = false, message = Crypto.L('busy') })
+        end
+
+        local ok, result = pcall(HandleStorageAction, source, warehouseId)
+
+        Unlock(source)
+
+        if not ok then
+            print(('[%s] storageAction error: %s'):format(RESOURCE, result))
+            return cb({ ok = false, message = Crypto.L('failed') })
+        end
+
+        cb(result)
+    end)
+
     RegisterCallback('panelAction', function(source, cb, payload)
         if type(payload) ~= 'table' then
             return cb({ ok = false, message = Crypto.L('invalid_action') })

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `codex_crypto_warehouses` (
   `total_mined` decimal(18,8) NOT NULL DEFAULT 0,
   `total_earned` bigint NOT NULL DEFAULT 0,
   `robbed_at` bigint NOT NULL DEFAULT 0,
+  `gpu_stock` int NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`warehouse_id`),

@@ -2,7 +2,7 @@
 
 An advanced, server-authoritative **ESX** crypto mining economy for FiveM: buy warehouses, fill them with real mining rig props, upgrade and maintain them, pay the electricity, watch a live Bitcoin market, and get robbed by other players.
 
-Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**373 tests**).
+Built with **props and interiors** (base game IPLs out of the box, MLO-ready), no external paid dependency, and a full automated test suite (**387 tests**).
 
 ---
 
@@ -50,6 +50,7 @@ Every model name above is verified by an automated test, so a typo can't silentl
 
 ### Mining rigs (real props)
 - Rig chassis, GPU stacks, and cooler props are spawned inside the interior and update live as you install hardware.
+- **GPU storage** (the wooden crate): with `ox_inventory` it opens a registered stash chest; with the classic ESX inventory it deposits every carried GPU and lets you take them back, persisted in the `gpu_stock` column (auto-migrated on start).
 - Rig slots are generated as two GPU banks split by a walkable central aisle (~5 m wide), so every rig is reachable on foot and a 24-slot warehouse needs zero hand-written coordinates.
 - **Every rig is a computer**: a monitor prop faces the aisle and targeting it opens the warehouse panel already focused on that rig, with a "live status from this rig" banner. No phone app — you read your BTC balance, hash rate and earnings on the actual machines (or on the management terminal).
 - Up to 8 GPUs per rig (configurable).
@@ -264,7 +265,7 @@ The resource ships with a real test suite that boots the actual server scripts o
 ```bash
 cd codex_cryptomining
 
-# Server logic - 242 tests (needs lupa: pip install lupa)
+# Server logic - 256 tests (needs lupa: pip install lupa)
 python3 tests/run_lua_tests.py
 # or, with a system Lua 5.4:
 lua tests/run_tests.lua

@@ -700,6 +700,20 @@ local function BuildInteriorTargets(data, robbery, lootable)
                 SendNUIMessage({ action = 'tab', tab = 'power' })
             end
         end, 2.0)
+
+        -- GPU storage crate: an ox_inventory chest, or a quick store/take
+        -- transfer with the classic ESX inventory.
+        if not (Config.Storage and Config.Storage.Enabled == false) then
+            AddTargetPoint('codexcrypto:interior:storage', interiorConfig.storage, Crypto.L('warehouse_storage'), 'fa-solid fa-box-open', function()
+                local result = ServerCallback('storageAction', currentWarehouse)
+
+                if result and result.mode == 'stash' and IsStarted('ox_inventory') then
+                    -- The NUI panel is never open here; give the stash focus.
+                    SetNuiFocus(false, false)
+                    exports.ox_inventory:openInventory('stash', result.stashId)
+                end
+            end, 2.0)
+        end
     end
 
     -- Rig interactions.

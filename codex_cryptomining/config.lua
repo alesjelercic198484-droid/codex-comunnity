@@ -355,6 +355,22 @@ Config.Props = {
 }
 
 -- ---------------------------------------------------------------------------
+-- GPU STORAGE (the wooden crate inside every interior)
+-- ---------------------------------------------------------------------------
+-- A real storage, not just a prop. With ox_inventory running it becomes a
+-- stash chest (persisted by ox_inventory itself). With the classic ESX
+-- inventory it is a simple "store all / take all" transfer and the stock is
+-- persisted in the `gpu_stock` column of the warehouses table (migration is
+-- automatic when Database.AutoCreate is enabled).
+Config.Storage = {
+    Enabled = true,
+    -- ox_inventory stash settings.
+    Label = 'GPU storage',
+    Slots = 40,
+    MaxWeight = 250000
+}
+
+-- ---------------------------------------------------------------------------
 -- WAREHOUSES
 -- ---------------------------------------------------------------------------
 -- `id` must stay unique and must not change once players own the warehouse.
