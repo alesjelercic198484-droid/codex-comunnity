@@ -1,9 +1,29 @@
-local ESX = exports.es_extended:getSharedObject()
+local ESX
+
+-- Supports both modern ESX exports and older servers using the shared-object event.
+if GetResourceState('es_extended') == 'started' then
+    pcall(function() ESX = exports.es_extended:getSharedObject() end)
+end
+if not ESX then
+    TriggerEvent('esx:getSharedObject', function(object) ESX = object end)
+end
+if not ESX then
+    error('[codex_construction] ESX could not be loaded. Start es_extended before this resource.')
+end
+
 local session = nil
 local locks = {}
 
 local function notify(src, message, kind)
     TriggerClientEvent('codex_construction:notify', src, message, kind or 'inform')
+end
+
+local function nearForeman(src)
+    local ped = GetPlayerPed(src)
+    if not ped or ped == 0 then return false end
+    local position = GetEntityCoords(ped)
+    local c = Config.Foreman.coords
+    return #(position - vector3(c.x, c.y, c.z)) <= 5.0
 end
 
 local function countCrew()
@@ -65,11 +85,13 @@ end)
 
 RegisterNetEvent('codex_construction:open', function()
     local src = source
+    if not nearForeman(src) then return end
     TriggerClientEvent('codex_construction:openTablet', src, publicState(src), ESX.GetPlayerFromId(src) and ESX.GetPlayerFromId(src).getName() or GetPlayerName(src))
 end)
 
 RegisterNetEvent('codex_construction:create', function()
     local src = source
+    if not nearForeman(src) then return notify(src, 'You must be at the foreman to manage a contract.', 'error') end
     if locks[src] then return end
     locks[src] = true
     if session then notify(src, 'A contract is already recruiting. Join it or wait until it is finished.', 'error')
@@ -84,6 +106,7 @@ end)
 
 RegisterNetEvent('codex_construction:join', function()
     local src = source
+    if not nearForeman(src) then return notify(src, 'You must be at the foreman to manage a contract.', 'error') end
     if locks[src] or not session or session.started then return notify(src, 'This contract is no longer accepting crew members.', 'error') end
     if session.crew[src] then return notify(src, 'You are already in this crew.', 'error') end
     if countCrew() >= Config.MaxPlayers then return notify(src, 'This crew is full (maximum four players).', 'error') end
@@ -95,6 +118,7 @@ end)
 
 RegisterNetEvent('codex_construction:leave', function()
     local src = source
+    if not nearForeman(src) then return notify(src, 'You must be at the foreman to manage a contract.', 'error') end
     if not session or not session.crew[src] or session.started then return end
     session.crew[src] = nil
     if countCrew() == 0 then session = nil else if session.leader == src then for id in pairs(session.crew) do session.leader = id break end end broadcast() end
@@ -102,6 +126,7 @@ end)
 
 RegisterNetEvent('codex_construction:start', function()
     local src = source
+    if not nearForeman(src) then return notify(src, 'You must be at the foreman to manage a contract.', 'error') end
     if not session or session.leader ~= src or session.started then return notify(src, 'Only the crew leader can start a waiting contract.', 'error') end
     session.started, session.endsAt = true, os.time() + Config.JobDuration
     local index = 0

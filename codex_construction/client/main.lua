@@ -1,4 +1,11 @@
-local ESX = exports.es_extended:getSharedObject()
+local ESX
+if GetResourceState('es_extended') == 'started' then
+    pcall(function() ESX = exports.es_extended:getSharedObject() end)
+end
+if not ESX then
+    TriggerEvent('esx:getSharedObject', function(object) ESX = object end)
+end
+
 local foreman, props = nil, {}
 local active, taskMap, endsAt, working = false, {}, 0, false
 

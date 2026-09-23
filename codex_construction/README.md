@@ -46,4 +46,4 @@ Go to the foreman and use **Open construction tablet**. Create a crew, let up to
 - A dropped player is removed from the crew; if everyone leaves, the session is deleted. A resource restart also clears the in-memory session safely.
 - This resource intentionally does not alter `xPlayer.setJob` and does not require a construction job.
 - Make sure `ox_inventory` is started before this resource. If you use a custom item system, change `Config.RequireItem` and the server inventory calls together.
-- The included `prop cement mixer` model is commonly available in GTA/FiveM builds. If your server has a custom prop pack, change that model in `Config.Tasks`.
+- The included `prop_cementmixer01a` model is commonly available in GTA/FiveM builds. If your server has a custom prop pack, change that model in `Config.Tasks`.
