@@ -1,0 +1,14 @@
+# codex_bodyharvest - load order
+# The resource needs ESX, ox_lib, ox_inventory and ox_target to be running first.
+
+ensure oxmysql
+ensure es_extended
+ensure ox_lib
+ensure ox_inventory
+ensure ox_target
+
+ensure codex_bodyharvest
+
+# OneSync must be enabled (infinity or on). The server validates the real ped
+# position and health of every player, which only works with OneSync.
+set onesync on
