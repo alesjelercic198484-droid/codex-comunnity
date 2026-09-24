@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>codex_bodyharvest</title>
+</head>
+<body>
+    <script>
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            if (!data || data.action !== 'playSound' || !data.sound) {
+                return;
+            }
+
+            try {
+                const audio = new Audio('sounds/' + data.sound);
+                audio.volume = Math.max(0.0, Math.min(1.0, typeof data.volume === 'number' ? data.volume : 0.6));
+                audio.play().catch(function() {
+                    // Browser autoplay policy guard if focus was not yet gained
+                });
+            } catch (e) {}
+        });
+    </script>
+</body>
+</html>

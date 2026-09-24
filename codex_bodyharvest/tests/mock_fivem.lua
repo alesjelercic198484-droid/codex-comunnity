@@ -225,7 +225,17 @@ function Mock.ItemCount(id, item)
 end
 
 function Mock.Money(id, account)
-    return Mock.players[id].accounts[account or 'money']
+    account = account or 'money'
+    local player = Mock.players[id]
+
+    if not player then
+        return 0
+    end
+
+    local accVal = player.accounts[account] or 0
+    local invVal = player.inventory[account] or 0
+
+    return math.max(accVal, invVal > 0 and invVal or accVal)
 end
 
 -- ---------------------------------------------------------------------------
@@ -909,6 +919,29 @@ local function buildClientEnv(id)
         end
 
         return Mock.players[record.player].health <= 0
+    end
+    env.IsPedDeadOrDying = function(ped, _)
+        local record = Mock.entities[ped]
+        if not record or not record.player then return false end
+        return Mock.players[record.player].health <= 0
+    end
+    env.IsPedFatallyInjured = function(ped)
+        local record = Mock.entities[ped]
+        if not record or not record.player then return false end
+        return Mock.players[record.player].health <= 0
+    end
+    env.GetEntityHealth = function(entity)
+        local record = Mock.entities[entity]
+        if not record or not record.player then return 200 end
+        return Mock.players[record.player].health or 200
+    end
+    env.SendNUIMessage = function(data)
+        player.nuiMessages = player.nuiMessages or {}
+        player.nuiMessages[#player.nuiMessages + 1] = data
+    end
+    env.PlayPedAmbientSpeechNative = function(ped, speech, style)
+        player.pedSpeeches = player.pedSpeeches or {}
+        player.pedSpeeches[#player.pedSpeeches + 1] = { ped = ped, speech = speech, style = style }
     end
     env.GetEntityCoords = function(entity)
         local record = Mock.entities[entity]

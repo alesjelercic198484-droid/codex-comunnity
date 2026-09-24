@@ -18,11 +18,12 @@ on the map). The parts are sold to a hidden dealer in an abandoned mine shaft.
 - **Cutting animation** with a knife prop and an `ox_lib` progress circle (6s / 7s / 9s).
 - **Items:** `finger`, `ear`, `tongue`.
 - **Hidden dealer** (`ox_target`) at an illegal location:
-  | Option | Minimum | Price each | Full sale |
+  | Option | Minimum | Price each | Full sale (black_money) |
   | --- | --- | --- | --- |
   | Sell fingers | 3 | $30,000 | 3 = $90,000 |
   | Sell ears | 3 | $40,000 | 3 = $120,000 |
   | Sell tongues | 3 | $35,000 | 3 = $105,000 |
+- **Spoken Dealer Greeting**: When approaching the collector, he greets the player: *"What can i do for you today my boy"* (plays custom NUI audio, GTA V ambient speech and on-screen subtitle).
 - **Police alert** to every job in `Config.Alert.Jobs` the moment somebody cuts: notification
   `Assassination In Progress`, dispatch sound and a flashing red blip that lives exactly **90 seconds**.
 - **Open fire zone**: **20 seconds** after the police alert every other player gets
@@ -67,7 +68,8 @@ Everything is in `config.lua`:
 | Setting | What it does |
 | --- | --- |
 | `Config.Dealer.Coords` | Where the hidden buyer stands. Default: the mine shaft at `-595.19, 2091.56, 131.41`. |
-| `Config.Dealer.Account` | `money` (cash), `bank` or `black_money`. Default: cash. |
+| `Config.Dealer.Account` | `black_money` (dirty cash), `money` or `bank`. Default: `black_money`. |
+| `Config.Dealer.Dialogue` | Dealer spoken greeting, custom audio file, subtitle and proximity radius. |
 | `Config.Dealer.SellAll` | `true` = sells the whole stack, `false` = sells exactly the minimum. |
 | `Config.Dealer.Blip.Enabled` | The location is meant to be secret, so this is `false`. |
 | `Config.Alert.Jobs` | Jobs that get the assassination alert. |
@@ -105,7 +107,7 @@ The resource ships with a FiveM emulator that really executes `client/main.lua` 
 with four players (killer, victim, officer, civilian):
 
 ```bash
-lua tests/run_tests.lua        # 111 assertions
+lua tests/run_tests.lua        # 113 assertions
 lua tests/simulation.lua       # readable minute by minute timeline
 ```
 

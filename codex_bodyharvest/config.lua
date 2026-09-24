@@ -127,13 +127,24 @@ Config.Dealer = {
     Distance = 2.0,
     -- The server refuses a sale from further away than this.
     ServerDistance = 5.0,
-    -- ESX account that receives the money: 'money' (cash), 'bank' or 'black_money'.
-    Account = 'money',
+    -- ESX account that receives the money: 'black_money' (dirty cash), 'money' or 'bank'.
+    Account = 'black_money',
     -- true  = the dealer buys the whole stack at once (minimum still applies)
     -- false = the dealer buys exactly the minimum amount per sale
     SellAll = true,
     -- Seconds between two sales of the same player.
     Cooldown = 5,
+    -- Spoken dialogue when approached by a player.
+    Dialogue = {
+        Enabled = true,
+        Text = 'What can i do for you today my boy',
+        AudioFile = 'dealer_greeting.mp3',
+        Distance = 4.0,       -- distance from dealer to trigger speech
+        Cooldown = 15,        -- seconds between greetings per player
+        Volume = 0.6,
+        Subtitles = true,     -- display subtitle notification
+        NativeSpeech = true   -- trigger GTA V ped speech native as well
+    },
     -- The location is supposed to be secret, so no blip by default.
     Blip = {
         Enabled = false,
