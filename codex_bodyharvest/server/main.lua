@@ -114,6 +114,10 @@ end
 --- state bag alone is never enough, otherwise a modded client could mark
 --- himself as dead and let a friend farm body parts.
 local function isPlayerDead(playerId)
+    if not isOnline(playerId) then
+        return false
+    end
+
     local ped = GetPlayerPed(playerId)
 
     if not ped or ped == 0 then
@@ -121,9 +125,9 @@ local function isPlayerDead(playerId)
     end
 
     local health = GetEntityHealth(ped) or 0
-    local state = getState(playerId)
-    local stateDead = state and state[Config.StateKeys.Dead] == true
 
+    -- If server health check is enabled and ped health is above threshold,
+    -- the ped is physically alive and cannot be harvested.
     if Config.Harvest.ServerHealthCheck and health > Config.Harvest.DeadHealthThreshold then
         return false
     end
@@ -132,7 +136,19 @@ local function isPlayerDead(playerId)
         return true
     end
 
-    return stateDead == true
+    local state = getState(playerId)
+    local stateDead = state and (state[Config.StateKeys.Dead] == true or state.isDead == true or state.dead == true)
+
+    local xPlayer = ESX and ESX.GetPlayerFromId(playerId)
+    local esxDead = false
+
+    if xPlayer and xPlayer.get then
+        if xPlayer.get('isDead') == true or xPlayer.get('dead') == true then
+            esxDead = true
+        end
+    end
+
+    return stateDead == true or esxDead == true
 end
 
 local function hasKnife(src)
@@ -688,7 +704,24 @@ RegisterNetEvent('codex_bodyharvest:sell', function(index)
 
     local total = amount * deal.price
 
-    xPlayer.addAccountMoney(Config.Dealer.Account, total, 'Body part sale')
+    if Config.Dealer.Account == 'black_money' then
+        local added = false
+        local okAdd, resAdd = pcall(function()
+            return exports.ox_inventory:AddItem(src, 'black_money', total)
+        end)
+
+        if okAdd and resAdd ~= false then
+            added = true
+        end
+
+        if not added and xPlayer.addAccountMoney then
+            pcall(function()
+                xPlayer.addAccountMoney('black_money', total, 'Body part sale')
+            end)
+        end
+    else
+        xPlayer.addAccountMoney(Config.Dealer.Account, total, 'Body part sale')
+    end
 
     notify(src, Config.Text.SellSuccess:format(amount, deal.name or deal.item, formatMoney(total)), 'success')
 

@@ -19,6 +19,14 @@ server_scripts {
     'server/main.lua'
 }
 
+ui_page 'html/index.html'
+
+files {
+    'html/index.html',
+    'html/sounds/*.mp3',
+    'html/sounds/*.ogg'
+}
+
 dependencies {
     'es_extended',
     'ox_lib',

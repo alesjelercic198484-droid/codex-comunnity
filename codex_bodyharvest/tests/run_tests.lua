@@ -383,7 +383,12 @@ group('Selling to the hidden dealer')
 local dealer = Config.Dealer.Coords
 Mock.SetCoords(KILLER, dealer.x, dealer.y, dealer.z)
 Mock.players[KILLER].inventory = { WEAPON_KNIFE = 1, finger = 2 }
-Mock.Tick(6000)
+Mock.Tick(1500)
+
+ok(#Mock.players[KILLER].nuiMessages > 0 or hasNotification(KILLER, Config.Dealer.Dialogue.Text), 'the dealer greets the player with dialogue')
+equals(Mock.players[KILLER].nuiMessages[1] and Mock.players[KILLER].nuiMessages[1].action, 'playSound', 'an audio trigger is sent to the NUI audio player')
+
+Mock.Tick(4500)
 
 local dealerOptions = Mock.EntityOptions(KILLER, Mock.DealerPed(KILLER))
 equals(#dealerOptions, 0, 'with 2 fingers the dealer shows nothing (minimum is 3)')
@@ -403,7 +408,7 @@ equals(dealerOptions[1].label, 'Sell fingers ($30,000 each, min 3)', 'the price 
 
 Mock.Select(KILLER, dealerOptions, 'sell_finger', Mock.DealerPed(KILLER))
 Mock.Tick(100)
-equals(Mock.Money(KILLER, 'money'), 120000, '4 fingers x $30,000 = $120,000')
+equals(Mock.Money(KILLER, Config.Dealer.Account), 120000, '4 fingers x $30,000 = $120,000 (' .. Config.Dealer.Account .. ')')
 equals(Mock.ItemCount(KILLER, 'finger'), 0, 'the fingers are removed')
 ok(hasNotification(KILLER, 'Sold 4x fingers for $120,000'), 'the sale is confirmed with a formatted amount')
 
@@ -418,13 +423,13 @@ equals(Mock.ItemCount(KILLER, 'ear'), 3, 'nothing was taken during the cooldown'
 Mock.Tick(6000)
 Mock.Select(KILLER, Mock.EntityOptions(KILLER, Mock.DealerPed(KILLER)), 'sell_ear', Mock.DealerPed(KILLER))
 Mock.Tick(100)
-equals(Mock.Money(KILLER, 'money'), 240000, '3 ears x $40,000 = $120,000 more')
+equals(Mock.Money(KILLER, Config.Dealer.Account), 240000, '3 ears x $40,000 = $120,000 more')
 
 Mock.Tick(6000)
 Mock.GiveItem(KILLER, 'tongue', 3)
 Mock.Select(KILLER, Mock.EntityOptions(KILLER, Mock.DealerPed(KILLER)), 'sell_tongue', Mock.DealerPed(KILLER))
 Mock.Tick(100)
-equals(Mock.Money(KILLER, 'money'), 345000, '3 tongues x $35,000 = $105,000 more')
+equals(Mock.Money(KILLER, Config.Dealer.Account), 345000, '3 tongues x $35,000 = $105,000 more')
 equals(Mock.ItemCount(KILLER, 'tongue'), 0, 'the tongues are gone')
 
 Mock.Tick(6000)
@@ -436,13 +441,13 @@ Mock.Tick(100)
 local farSale = Mock.LastClientEvent(KILLER, 'codex_bodyharvest:denied')
 equals(farSale and farSale.args[1], Config.Text.TooFar, 'selling from the other side of the map is refused')
 equals(Mock.ItemCount(KILLER, 'finger'), 3, 'the items are untouched')
-equals(Mock.Money(KILLER, 'money'), 345000, 'no money was paid')
+equals(Mock.Money(KILLER, Config.Dealer.Account), 345000, 'no money was paid')
 
 Mock.Tick(6000)
 Mock.ClearClientEvents(KILLER)
 Mock.EmitFromClient(KILLER, 'codex_bodyharvest:sell', 99)
 Mock.Tick(100)
-equals(Mock.Money(KILLER, 'money'), 345000, 'an invalid deal index pays nothing')
+equals(Mock.Money(KILLER, Config.Dealer.Account), 345000, 'an invalid deal index pays nothing')
 
 -- ---------------------------------------------------------------------------
 group('Inventory full')

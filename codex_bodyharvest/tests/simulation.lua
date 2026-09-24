@@ -207,11 +207,11 @@ Mock.Select(KILLER, Mock.EntityOptions(KILLER, Mock.DealerPed(KILLER)), 'sell_to
 Mock.Tick(100)
 line('Marco', 'notification: ' .. Mock.LastNotification(KILLER).description)
 
-line('Marco', ('cash: $%s   bag: %d fingers, %d ears, %d tongues')
-    :format(Config.FormatMoney(Mock.Money(KILLER, 'money')), Mock.ItemCount(KILLER, 'finger'),
+line('Marco', ('dirty cash: $%s   bag: %d fingers, %d ears, %d tongues')
+    :format(Config.FormatMoney(Mock.Money(KILLER, Config.Dealer.Account)), Mock.ItemCount(KILLER, 'finger'),
         Mock.ItemCount(KILLER, 'ear'), Mock.ItemCount(KILLER, 'tongue')))
 
-check(Mock.Money(KILLER, 'money') == 3 * 30000 + 3 * 40000 + 3 * 35000, '3x$30,000 + 3x$40,000 + 3x$35,000 = $315,000')
+check(Mock.Money(KILLER, Config.Dealer.Account) == 3 * 30000 + 3 * 40000 + 3 * 35000, '3x$30,000 + 3x$40,000 + 3x$35,000 = $315,000 in black money')
 check(Mock.ItemCount(KILLER, 'finger') == 0 and Mock.ItemCount(KILLER, 'ear') == 0 and Mock.ItemCount(KILLER, 'tongue') == 0, 'all parts were taken out of the inventory')
 
 -- ---------------------------------------------------------------------------
@@ -222,7 +222,7 @@ Mock.ClearClientEvents(KILLER)
 Mock.EmitFromClient(KILLER, 'codex_bodyharvest:sell', 1)
 Mock.Tick(100)
 line('Marco', ('sells 2 fingers (minimum 3) -> "%s"'):format(Mock.LastClientEvent(KILLER, 'codex_bodyharvest:denied').args[1]))
-check(Mock.ItemCount(KILLER, 'finger') == 2 and Mock.Money(KILLER, 'money') == 315000, 'below the minimum nothing is sold')
+check(Mock.ItemCount(KILLER, 'finger') == 2 and Mock.Money(KILLER, Config.Dealer.Account) == 315000, 'below the minimum nothing is sold')
 
 Mock.SetCoords(KILLER, 100.0, 100.0, 30.0)
 Mock.GiveItem(KILLER, 'finger', 1)
@@ -231,7 +231,7 @@ Mock.ClearClientEvents(KILLER)
 Mock.EmitFromClient(KILLER, 'codex_bodyharvest:sell', 1)
 Mock.Tick(100)
 line('Marco', ('sells 3 fingers from 2km away -> "%s"'):format(Mock.LastClientEvent(KILLER, 'codex_bodyharvest:denied').args[1]))
-check(Mock.Money(KILLER, 'money') == 315000, 'remote selling is impossible')
+check(Mock.Money(KILLER, Config.Dealer.Account) == 315000, 'remote selling is impossible')
 
 Mock.Revive(VICTIM)
 Mock.Tick(1000)

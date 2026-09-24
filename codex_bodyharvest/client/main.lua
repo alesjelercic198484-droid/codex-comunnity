@@ -142,11 +142,28 @@ local function getPlayerState(serverId)
 end
 
 local function localPlayerIsDead()
-    if IsEntityDead(PlayerPedId()) then
+    local ped = PlayerPedId()
+
+    if not ped or ped == 0 or not DoesEntityExist(ped) then
+        return false
+    end
+
+    if IsEntityDead(ped) or IsPedDeadOrDying(ped, true) or IsPedFatallyInjured(ped) then
         return true
     end
 
-    if ESX and ESX.PlayerData and ESX.PlayerData.dead then
+    if GetEntityHealth(ped) <= Config.Harvest.DeadHealthThreshold then
+        return true
+    end
+
+    if ESX and ESX.PlayerData and (ESX.PlayerData.dead or ESX.PlayerData.isDead) then
+        return true
+    end
+
+    local state = LocalPlayer and LocalPlayer.state
+
+    -- External death statebags set by ambulancejob / medical systems
+    if state and (state.isDead == true or state.dead == true or state.inLastStand == true) then
         return true
     end
 
@@ -214,18 +231,28 @@ end)
 -- TARGET OPTIONS ON DEAD PLAYERS
 -- ---------------------------------------------------------------------------
 local function targetIsHarvestable(entity)
-    if not IsEntityDead(entity) then
-        -- Some ambulance jobs keep the ped alive while the player is "down",
-        -- so the replicated death state is accepted as well.
-        local serverId = getPlayerServerId(entity)
-        local state = serverId and getPlayerState(serverId)
-
-        if not state or state[Config.StateKeys.Dead] ~= true then
-            return false
-        end
+    if not entity or entity == 0 or not DoesEntityExist(entity) then
+        return false
     end
 
-    return true
+    if IsEntityDead(entity) or IsPedDeadOrDying(entity, true) or IsPedFatallyInjured(entity) then
+        return true
+    end
+
+    local health = GetEntityHealth(entity)
+
+    if health > 0 and health <= Config.Harvest.DeadHealthThreshold then
+        return true
+    end
+
+    local serverId = getPlayerServerId(entity)
+    local state = serverId and getPlayerState(serverId)
+
+    if state and (state[Config.StateKeys.Dead] == true or state.isDead == true or state.dead == true) then
+        return true
+    end
+
+    return false
 end
 
 local function canHarvest(entity, partId)
@@ -538,6 +565,41 @@ local function loadModel(model)
     return HasModelLoaded(hash) and hash or nil
 end
 
+local lastDealerSpeech = 0
+
+local function triggerDealerGreeting()
+    if not Config.Dealer.Dialogue or not Config.Dealer.Dialogue.Enabled then
+        return
+    end
+
+    local now = GetGameTimer()
+    local cooldown = (Config.Dealer.Dialogue.Cooldown or 15) * 1000
+
+    if now < lastDealerSpeech + cooldown then
+        return
+    end
+
+    lastDealerSpeech = now
+
+    if Config.Dealer.Dialogue.AudioFile then
+        SendNUIMessage({
+            action = 'playSound',
+            sound = Config.Dealer.Dialogue.AudioFile,
+            volume = Config.Dealer.Dialogue.Volume or 0.6
+        })
+    end
+
+    if Config.Dealer.Dialogue.NativeSpeech and dealerPed and DoesEntityExist(dealerPed) then
+        pcall(function()
+            PlayPedAmbientSpeechNative(dealerPed, 'GENERIC_HI', 'SPEECH_PARAMS_FORCE_SHOUTED')
+        end)
+    end
+
+    if Config.Dealer.Dialogue.Subtitles and Config.Dealer.Dialogue.Text then
+        notify(Config.Dealer.Dialogue.Text, 'inform', 'Collector')
+    end
+end
+
 local function dealerOptions()
     local options = {}
 
@@ -552,9 +614,16 @@ local function dealerOptions()
                     return false
                 end
 
-                return countItems(deal.item) >= deal.min
+                local hasMin = countItems(deal.item) >= deal.min
+
+                if hasMin then
+                    triggerDealerGreeting()
+                end
+
+                return hasMin
             end,
             onSelect = function()
+                triggerDealerGreeting()
                 TriggerServerEvent('codex_bodyharvest:sell', index)
             end
         }
@@ -604,6 +673,31 @@ CreateThread(function()
         AddTextComponentSubstringPlayerName(Config.Dealer.Blip.Label)
         EndTextCommandSetBlipName(dealerBlip)
     end
+
+    -- Proximity greeting when approaching the dealer
+    CreateThread(function()
+        while dealerPed and DoesEntityExist(dealerPed) do
+            local sleep = 1500
+
+            if Config.Dealer.Dialogue and Config.Dealer.Dialogue.Enabled then
+                local pCoords = GetEntityCoords(PlayerPedId())
+                local dCoords = Config.Dealer.Coords
+                local dist = #(pCoords - vector3(dCoords.x, dCoords.y, dCoords.z))
+
+                if dist <= (Config.Dealer.Dialogue.Distance or 4.0) then
+                    sleep = 500
+
+                    if not localPlayerIsDead() then
+                        triggerDealerGreeting()
+                    end
+                elseif dist < 20.0 then
+                    sleep = 800
+                end
+            end
+
+            Wait(sleep)
+        end
+    end)
 end)
 
 -- ---------------------------------------------------------------------------
