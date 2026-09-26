@@ -1,0 +1,18 @@
+local nuiOpen = false
+RegisterNetEvent('codex_drugmission:openAdmin', function()
+    lib.callback('codex_drugmission:getMissions', false, function(missions)
+        nuiOpen = true; SetNuiFocus(true, true); SendNUIMessage({ action = 'open', missions = missions })
+    end)
+end)
+RegisterNetEvent('codex_drugmission:missionsUpdated', function(missions) if nuiOpen then SendNUIMessage({ action = 'missions', missions = missions }) end end)
+RegisterNUICallback('close', function(_, cb) nuiOpen = false; SetNuiFocus(false, false); cb({ ok = true }) end)
+RegisterNUICallback('getPosition', function(data, cb)
+    local p = GetEntityCoords(PlayerPedId()); local h = GetEntityHeading(PlayerPedId())
+    SendNUIMessage({ action = 'position', kind = data.kind, coords = { x = p.x, y = p.y, z = p.z, w = h } }); cb({ ok = true })
+end)
+RegisterNUICallback('save', function(data, cb)
+    lib.callback('codex_drugmission:saveMission', false, data, function(ok, message)
+        if ok then lib.notify({ description = 'Mission saved.', type = 'success' }); cb({ ok = true }) else lib.notify({ description = message or 'Save failed.', type = 'error' }); cb({ ok = false }) end
+    end)
+end)
+RegisterNUICallback('load', function(_, cb) lib.callback('codex_drugmission:getMissions', false, function(m) cb({ missions = m }) end) end)
