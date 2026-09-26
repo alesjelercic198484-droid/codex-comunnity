@@ -12,12 +12,12 @@ function StartDialogue(mission)
     local choice = lib.inputDialog('Choose your answer', { { type = 'select', label = 'Response', required = true, options = { { value = 'yes', label = Config.Text.brave }, { value = 'no', label = 'No, I am not ready yet.' } } } })
     if not choice then return end
     if choice[1] == 'no' then
-        playDialogueVoice('dialogue_not_ready.mp3')
+        playDialogueVoice('player_not_ready.mp3')
         lib.alertDialog({ header = 'You', content = Config.Text.decline, centered = true, cancel = false })
         playDialogueVoice('dialogue_decline.mp3')
         return
     end
-    playDialogueVoice('dialogue_brave.mp3')
+    playDialogueVoice('player_brave.mp3')
     Wait(1800)
     playDialogueVoice('dialogue_challenge.mp3')
     lib.alertDialog({ header = 'NPC', content = Config.Text.question .. '\n\n' .. Config.Text.challenge, centered = true, cancel = false })

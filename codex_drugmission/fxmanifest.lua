@@ -36,8 +36,8 @@ files {
     'data/missions.json',
     'sounds/hurry.mp3',
     'sounds/dialogue_start.mp3',
-    'sounds/dialogue_brave.mp3',
-    'sounds/dialogue_not_ready.mp3',
+    'sounds/player_brave.mp3',
+    'sounds/player_not_ready.mp3',
     'sounds/dialogue_challenge.mp3',
     'sounds/dialogue_decline.mp3'
 }

@@ -54,9 +54,9 @@ The client only requests actions. The server owns the active token, selected mis
 A delivery vehicle is created as a networked entity. The driver must be in the mission vehicle at the destination. Leaving it starts a two-minute countdown with ten-second notices; the 60-second notice also attempts to play `sounds/hurry.ogg`. The included English voice files are played through the NUI:
 
 - `sounds/dialogue_start.mp3`
-- `sounds/dialogue_brave.mp3`
-- `sounds/dialogue_not_ready.mp3`
-- `sounds/dialogue_challenge.mp3`
+- `sounds/player_brave.mp3` — deep player voice
+- `sounds/player_not_ready.mp3` — deep player voice
+- `sounds/dialogue_challenge.mp3` — NPC voice
 - `sounds/dialogue_decline.mp3`
 - `sounds/hurry.mp3`
 
