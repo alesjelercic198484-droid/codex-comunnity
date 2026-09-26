@@ -10,9 +10,24 @@ local function isAdmin(source)
 end
 
 local function notify(source, message, type) TriggerClientEvent('ox_lib:notify', source, { description = message, type = type or 'inform' }) end
+local function publicMissions()
+    local result = {}
+    for _, mission in ipairs(Missions) do
+        result[#result + 1] = {
+            id = mission.id,
+            name = mission.name,
+            npc = mission.npc
+        }
+    end
+    return result
+end
+
 lib.callback.register('codex_drugmission:getMissions', function(source)
     if not isAdmin(source) then return {} end
     return Missions
+end)
+lib.callback.register('codex_drugmission:getPublicMissions', function()
+    return publicMissions()
 end)
 lib.callback.register('codex_drugmission:saveMission', function(source, mission)
     if not isAdmin(source) then return false, 'Not authorised' end
@@ -22,7 +37,8 @@ lib.callback.register('codex_drugmission:saveMission', function(source, mission)
     for i, old in ipairs(Missions) do if old.id == clean.id then Missions[i] = clean; found = true end end
     if not found then Missions[#Missions + 1] = clean end
     SaveMissions(Missions)
-    TriggerClientEvent('codex_drugmission:missionsUpdated', -1, Missions)
+    TriggerClientEvent('codex_drugmission:missionsUpdated', source, Missions)
+    TriggerClientEvent('codex_drugmission:publicMissionsUpdated', -1, publicMissions())
     return true
 end)
 

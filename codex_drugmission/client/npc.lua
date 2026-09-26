@@ -22,5 +22,5 @@ function SpawnMissionNpcs(missions)
         end
     end
 end
-RegisterNetEvent('codex_drugmission:missionsUpdated', function(missions) SpawnMissionNpcs(missions) end)
-CreateThread(function() Wait(1000); local missions = lib.callback.await('codex_drugmission:getMissions', false); if missions and #missions > 0 then SpawnMissionNpcs(missions) end end)
+RegisterNetEvent('codex_drugmission:publicMissionsUpdated', function(missions) SpawnMissionNpcs(missions) end)
+CreateThread(function() Wait(1000); local missions = lib.callback.await('codex_drugmission:getPublicMissions', false); if missions and #missions > 0 then SpawnMissionNpcs(missions) end end)
