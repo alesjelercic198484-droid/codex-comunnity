@@ -5,7 +5,7 @@ end
 function StartDialogue(mission)
     if MissionClient.active then return notify('You already have an active mission.', 'error') end
     lib.alertDialog({ header = 'CodeX Roleplay', content = Config.Text.start, centered = true, cancel = false, labels = { confirm = 'Choose' } })
-    local choice = lib.inputDialog('Choose your answer', { { type = 'select', label = 'Response', required = true, options = { { value = 'yes', label = Config.Text.brave }, { value = 'no', label = 'Ne, nisem še pripravljen.' } } } })
+    local choice = lib.inputDialog('Choose your answer', { { type = 'select', label = 'Response', required = true, options = { { value = 'yes', label = Config.Text.brave }, { value = 'no', label = 'No, I am not ready yet.' } } } })
     if not choice then return end
     if choice[1] == 'no' then lib.alertDialog({ header = 'NPC', content = Config.Text.decline, centered = true, cancel = false }); return end
     lib.alertDialog({ header = 'NPC', content = Config.Text.question .. '\n\n' .. Config.Text.challenge, centered = true, cancel = false })

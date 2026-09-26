@@ -17,7 +17,7 @@ function SpawnMissionNpcs(missions)
         if mission.npc and mission.npc.coords then
             local ped = makeNpc(mission.npc); if ped then
                 spawnedMissionNpcs[#spawnedMissionNpcs + 1] = ped
-                exports.ox_target:addLocalEntity(ped, {{ name = 'codex_drugmission_' .. mission.id, icon = 'fa-solid fa-comments', label = 'Pogovori se', distance = Config.DistanceToStart, onSelect = function() StartDialogue(mission) end }})
+                exports.ox_target:addLocalEntity(ped, {{ name = 'codex_drugmission_' .. mission.id, icon = 'fa-solid fa-comments', label = 'Talk to the contact', distance = Config.DistanceToStart, onSelect = function() StartDialogue(mission) end }})
             end
         end
     end

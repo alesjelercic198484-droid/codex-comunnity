@@ -9,18 +9,18 @@ Config.FirstWaveDelay = 20
 Config.SecondWaveDelay = 180
 Config.EnemyCleanupDistance = 700.0
 Config.Blips = { destination = true, missionVehicle = true, enemies = false }
-Config.HurrySound = 'hurry.ogg'
+Config.HurrySound = 'hurry.mp3'
 Config.Text = {
-    start = 'A si to ti? Govorili so, da boš prišel... ali si zbral pogum?',
-    brave = 'Jaz ne potrebujem poguma, imam na sebi vse kar potrebujem.',
-    question = 'A tako... ne potrebuješ poguma?',
-    challenge = 'To bomo pa še videli.',
-    decline = 'Sem vedel, da nisi za to.',
-    loaded = 'V njem je polno droge. Upam, da ostaneš živ.',
-    success = 'MISIJA JE BILA USPEŠNA!',
-    dead = 'Misija neuspešna – umrl si.',
-    hurry = 'Gremo hitro, če ne smo mrtvi.',
-    final = 'Gospod... to je za vas.'
+    start = 'Is that you? They said you would come... have you got the courage?',
+    brave = 'I do not need courage. I have everything I need on me.',
+    question = 'Oh, really... you do not need courage?',
+    challenge = 'We will see about that.',
+    decline = 'I knew you were not ready for this.',
+    loaded = 'It is packed with drugs. I hope you stay alive.',
+    success = 'MISSION SUCCESSFUL!',
+    dead = 'Mission failed – you died.',
+    hurry = 'Move quickly, or we are dead.',
+    final = 'Sir... this is for you.'
 }
 Config.DefaultMission = {
     id = 'dock_drug_run', name = 'Dock Drug Run',

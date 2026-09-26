@@ -34,7 +34,7 @@ files {
     'html/style.css',
     'html/app.js',
     'data/missions.json',
-    'sounds/hurry.ogg'
+    'sounds/hurry.mp3'
 }
 
 dependencies {

@@ -51,7 +51,7 @@ Use reward type `item` for that item, or reward type `black_money` for the ESX a
 
 The client only requests actions. The server owns the active token, selected mission, vehicle network ID, destination checks, player seat checks, state and one-time reward flag. Enemy creation is only requested after a server-authorised mission is active and enemy network IDs are reported back to the server. Completing with a fake event, vehicle or coordinate is rejected.
 
-A delivery vehicle is created as a networked entity. The driver must be in the mission vehicle at the destination. Leaving it starts a two-minute countdown with ten-second notices; the 60-second notice also attempts to play `sounds/hurry.ogg`. The sound is optional: if it is absent, the notification still works. To add it, place a valid `hurry.ogg` in `sounds/` and add it to the `files` list in `fxmanifest.lua` (the manifest already has the entry).
+A delivery vehicle is created as a networked entity. The driver must be in the mission vehicle at the destination. Leaving it starts a two-minute countdown with ten-second notices; the 60-second notice also attempts to play `sounds/hurry.ogg`. The included `sounds/hurry.mp3` voice line is played through the NUI. If the file is removed, the notification still works without audio.
 
 ## Testing checklist
 
@@ -63,4 +63,4 @@ A delivery vehicle is created as a networked entity. The driver must be in the m
 - Test death, vehicle destruction, disconnect, resource restart and destination completion.
 - Confirm the reward arrives exactly once and an item reward is rejected safely when the inventory is full.
 
-All user-facing script messages and the administration panel are in English. The requested Slovenian dialogue strings are retained verbatim where specified.
+All user-facing script messages, dialogue, audio and the administration panel are in English.
