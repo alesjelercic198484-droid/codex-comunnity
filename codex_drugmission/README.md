@@ -51,7 +51,16 @@ Use reward type `item` for that item, or reward type `black_money` for the ESX a
 
 The client only requests actions. The server owns the active token, selected mission, vehicle network ID, destination checks, player seat checks, state and one-time reward flag. Enemy creation is only requested after a server-authorised mission is active and enemy network IDs are reported back to the server. Completing with a fake event, vehicle or coordinate is rejected.
 
-A delivery vehicle is created as a networked entity. The driver must be in the mission vehicle at the destination. Leaving it starts a two-minute countdown with ten-second notices; the 60-second notice also attempts to play `sounds/hurry.ogg`. The included `sounds/hurry.mp3` voice line is played through the NUI. If the file is removed, the notification still works without audio.
+A delivery vehicle is created as a networked entity. The driver must be in the mission vehicle at the destination. Leaving it starts a two-minute countdown with ten-second notices; the 60-second notice also attempts to play `sounds/hurry.ogg`. The included English voice files are played through the NUI:
+
+- `sounds/dialogue_start.mp3`
+- `sounds/dialogue_brave.mp3`
+- `sounds/dialogue_not_ready.mp3`
+- `sounds/dialogue_challenge.mp3`
+- `sounds/dialogue_decline.mp3`
+- `sounds/hurry.mp3`
+
+If any audio file is removed, the text dialogue and notification still work.
 
 ## Testing checklist
 

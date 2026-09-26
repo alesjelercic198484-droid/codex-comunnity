@@ -1,13 +1,25 @@
 local function notify(message, typ) lib.notify({ description = message, type = typ or 'inform' }) end
+local function playDialogueVoice(file)
+    SendNUIMessage({ action = 'playSound', sound = file })
+end
 local function addBlip(coords, sprite, colour, label)
     local blip = AddBlipForCoord(coords.x, coords.y, coords.z); SetBlipSprite(blip, sprite); SetBlipColour(blip, colour); SetBlipScale(blip, 0.8); BeginTextCommandSetBlipName('STRING'); AddTextComponentString(label); EndTextCommandSetBlipName(blip); return blip
 end
 function StartDialogue(mission)
     if MissionClient.active then return notify('You already have an active mission.', 'error') end
+    playDialogueVoice('dialogue_start.mp3')
     lib.alertDialog({ header = 'CodeX Roleplay', content = Config.Text.start, centered = true, cancel = false, labels = { confirm = 'Choose' } })
     local choice = lib.inputDialog('Choose your answer', { { type = 'select', label = 'Response', required = true, options = { { value = 'yes', label = Config.Text.brave }, { value = 'no', label = 'No, I am not ready yet.' } } } })
     if not choice then return end
-    if choice[1] == 'no' then lib.alertDialog({ header = 'NPC', content = Config.Text.decline, centered = true, cancel = false }); return end
+    if choice[1] == 'no' then
+        playDialogueVoice('dialogue_not_ready.mp3')
+        lib.alertDialog({ header = 'You', content = Config.Text.decline, centered = true, cancel = false })
+        playDialogueVoice('dialogue_decline.mp3')
+        return
+    end
+    playDialogueVoice('dialogue_brave.mp3')
+    Wait(1800)
+    playDialogueVoice('dialogue_challenge.mp3')
     lib.alertDialog({ header = 'NPC', content = Config.Text.question .. '\n\n' .. Config.Text.challenge, centered = true, cancel = false })
     BeginMission(mission)
 end
