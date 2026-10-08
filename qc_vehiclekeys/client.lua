@@ -1,0 +1,7 @@
+require 'modules.utils.client'
+require 'modules.keys.client'
+require 'modules.locks.client'
+require 'modules.engine.client'
+require 'modules.theft.client'
+require 'modules.ui.client'
+require 'modules.compat.client'
