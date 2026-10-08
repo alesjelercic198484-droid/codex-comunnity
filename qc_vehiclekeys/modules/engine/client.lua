@@ -13,20 +13,18 @@ lib.onCache('vehicle', function(value)
     Engine:applyFlags()
     SetVehicleNeedsToBeHotwired(value, false)
 
-    -- Ugasni motor za VSA vozila - igralec mora imeti ključ in pritisniti Y
+    -- Ugasni motor ob vstopu - igralec mora pritisniti Y
     if GetPedInVehicleSeat(value, -1) == cache.ped then
-        Citizen.Wait(500)
-        SetPedConfigFlag(cache.ped, 429, false)
-        SetVehicleEngineOn(value, false, true, true)
-        Citizen.Wait(100)
-        SetPedConfigFlag(cache.ped, 429, true)
+        Citizen.CreateThread(function()
+            Citizen.Wait(200)
+            SetVehicleEngineOn(value, false, true, true)
+        end)
     end
 end)
 
 function Engine:applyFlags()
     local playerPed = cache.ped
     SetPedConfigFlag(playerPed, 241, true) -- Prevent engine stopping
-    SetPedConfigFlag(playerPed, 429, true) -- Prevent engine starting
     SetPedConfigFlag(playerPed, 184, true) -- Prevent auto-shuffle
 end
 
@@ -83,19 +81,9 @@ function Engine:toggleEngine()
     end
 
     local engineOn = GetIsVehicleEngineRunning(vehicle)
-    if engineOn then
-        -- Ugasni motor
-        SetVehicleEngineOn(vehicle, false, true, true)
-        Bridge.Notify.showNotify(locale('engine_off'), 'success')
-    else
-        -- Začasno odstrani flag ki blokira zagon
-        SetPedConfigFlag(cache.ped, 429, false)
-        SetVehicleEngineOn(vehicle, true, true, true)
-        -- Ponovno nastavi flag
-        Citizen.Wait(100)
-        SetPedConfigFlag(cache.ped, 429, true)
-        Bridge.Notify.showNotify(locale('engine_on'), 'success')
-    end
+    -- Preklopimo motor - instant, brez blokade
+    SetVehicleEngineOn(vehicle, not engineOn, true, true)
+    Bridge.Notify.showNotify(engineOn and locale('engine_off') or locale('engine_on'), 'success')
 end
 
 -- Kontinuiran thread: prepreči vožnjo brez ključa
@@ -108,17 +96,13 @@ Citizen.CreateThread(function()
             local vehicle = cache.vehicle
             local vehicleClass = GetVehicleClass(vehicle)
 
-            -- Kolesa so izvzeta če je ignoreBikes
             if not (Config.Engine.ignoreBikes and vehicleClass == 13) then
                 local vehPlate = Utils:trim(GetVehicleNumberPlateText(vehicle))
                 local itemCount = Bridge.Inventory.getItemCount('car_key', {plate = vehPlate})
 
                 -- Če igralec nima ključa in motor teče, ugasni motor
                 if itemCount < 1 and GetIsVehicleEngineRunning(vehicle) then
-                    SetPedConfigFlag(cache.ped, 429, false)
                     SetVehicleEngineOn(vehicle, false, true, true)
-                    Citizen.Wait(100)
-                    SetPedConfigFlag(cache.ped, 429, true)
                 end
             end
         end

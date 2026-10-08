@@ -1,7 +1,6 @@
 local Keys = {}
 local Config = require 'config.shared'
 local Utils = require 'modules.utils.client'
-local givenKeys = {} -- sledimo katerim vozilom smo že dali ključ
 
 local function getVehicleNetId(plate, entity)
     if not plate or plate == '' then return end
@@ -32,10 +31,7 @@ function Keys:giveKeyAndUnlock(plate, entity)
     plate = Utils:trim(plate)
     if not entity or entity == 0 then return end
 
-    -- Daj ključ
     self:createKey(plate, entity)
-
-    -- Odkleni vozilo lokalno (state=true pomeni odklenjeno)
     SetVehicleDoorsLocked(entity, 1)
     SetVehicleDoorsLockedForAllPlayers(entity, false)
 end
@@ -60,11 +56,11 @@ RegisterCommand('spawnKeys', function()
     if not cache.vehicle or cache.vehicle == 0 then
         return lib.print.info('You must be in a vehicle to spawn keys')
     end
-
     Keys:createKey(Utils:trim(GetVehicleNumberPlateText(cache.vehicle)), cache.vehicle)
 end, false)
 
 -- Auto-give keys when entering a vehicle you own (garage/shop)
+-- Enostavna verzija brez callbackov
 if Config.Settings.autoGiveKeys then
     lib.onCache('vehicle', function(value)
         if not value or value == 0 then return end
@@ -76,36 +72,20 @@ if Config.Settings.autoGiveKeys then
         -- Če že imaš ključ, ne naredi nič
         if Keys:hasKey(plate) then return end
 
-        -- Počakaj da se vozilo popolnoma naloži
+        -- Počakaj da se vozilo naloži
         Citizen.Wait(1500)
 
-        -- Ponovno preveri po čakanju
+        -- Ponovno preveri
         if Keys:hasKey(plate) then return end
 
-        -- Če smo že dali ključ za to tablico, preskoči
-        if givenKeys[plate] then return end
-
-        -- Preveri lastništvo preko server callbacka z error handlingom
-        local success, isOwner = pcall(function()
-            return lib.callback.await('qc_vehiclekeys:checkVehicleOwner', false, plate)
-        end)
-
-        if success and isOwner then
-            givenKeys[plate] = true
-            Keys:createKey(plate, value)
-            Bridge.Notify.showNotify(locale('vehicle_unlocked'), 'success')
-            return
-        end
-
-        -- Fallback: če callback ne dela, poskusimo direktno
+        -- Pošlji serverju da preveri lastništvo in da ključ
         TriggerServerEvent('qc_vehiclekeys/server/checkAndGiveKey', plate)
     end)
 end
 
--- Odgovor iz serverja za fallback
+-- Server odgovor
 RegisterNetEvent('qc_vehiclekeys/client/keyResult', function(plate, success)
     if success then
-        givenKeys[plate] = true
         Bridge.Notify.showNotify(locale('vehicle_unlocked'), 'success')
     end
 end)
