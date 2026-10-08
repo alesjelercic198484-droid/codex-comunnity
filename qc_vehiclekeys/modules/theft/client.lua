@@ -94,10 +94,12 @@ end
 
 function Theft:canLockpick(vehicle)
     if not Config.Theft.canAttempt(vehicle) then
+        Bridge.Notify.showNotify('Cannot attempt (state)', 'error')
         return false
     end
 
     if self.isLockpicking then
+        Bridge.Notify.showNotify('Already lockpicking', 'error')
         return false
     end
 
@@ -147,6 +149,8 @@ function Theft:startLockpick(vehicle)
     end
 
     if difficulty == 'expert' then
+        SetNuiFocus(true, true)
+        Citizen.Wait(100)
         SendNUIMessage({action = 'setVisibleJammer', data = true})
         SendNUIMessage({
             action = 'startJammer',
@@ -155,7 +159,6 @@ function Theft:startLockpick(vehicle)
                 timeLimit = 25000
             }
         })
-        SetNuiFocus(true, true)
         -- Timeout varovalka za jammer
         Citizen.CreateThread(function()
             Citizen.Wait(35000)
@@ -170,6 +173,8 @@ function Theft:startLockpick(vehicle)
     end
 
     local difficultyData = Config.Theft.difficulties[difficulty]
+    SetNuiFocus(true, true)
+    Citizen.Wait(100)
     SendNUIMessage({action = 'setVisibleLockpick', data = true})
     SendNUIMessage({
         action = 'startLockpick',
@@ -179,7 +184,6 @@ function Theft:startLockpick(vehicle)
             timeLimit = difficultyData.timeLimit
         }
     })
-    SetNuiFocus(true, true)
     -- Timeout varovalka za lockpick
     Citizen.CreateThread(function()
         Citizen.Wait(difficultyData.timeLimit + 10000)
