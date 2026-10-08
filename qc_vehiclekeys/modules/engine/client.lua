@@ -15,7 +15,11 @@ lib.onCache('vehicle', function(value)
 
     -- Ugasni motor za VSA vozila - igralec mora imeti ključ in pritisniti Y
     if GetPedInVehicleSeat(value, -1) == cache.ped then
+        Citizen.Wait(500)
+        SetPedConfigFlag(cache.ped, 429, false)
         SetVehicleEngineOn(value, false, true, true)
+        Citizen.Wait(100)
+        SetPedConfigFlag(cache.ped, 429, true)
     end
 end)
 
@@ -84,8 +88,12 @@ function Engine:toggleEngine()
         SetVehicleEngineOn(vehicle, false, true, true)
         Bridge.Notify.showNotify(locale('engine_off'), 'success')
     else
-        -- Prižgi motor
+        -- Začasno odstrani flag ki blokira zagon
+        SetPedConfigFlag(cache.ped, 429, false)
         SetVehicleEngineOn(vehicle, true, true, true)
+        -- Ponovno nastavi flag
+        Citizen.Wait(100)
+        SetPedConfigFlag(cache.ped, 429, true)
         Bridge.Notify.showNotify(locale('engine_on'), 'success')
     end
 end
@@ -107,7 +115,10 @@ Citizen.CreateThread(function()
 
                 -- Če igralec nima ključa in motor teče, ugasni motor
                 if itemCount < 1 and GetIsVehicleEngineRunning(vehicle) then
+                    SetPedConfigFlag(cache.ped, 429, false)
                     SetVehicleEngineOn(vehicle, false, true, true)
+                    Citizen.Wait(100)
+                    SetPedConfigFlag(cache.ped, 429, true)
                 end
             end
         end

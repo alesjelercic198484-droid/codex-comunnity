@@ -77,21 +77,38 @@ if Config.Settings.autoGiveKeys then
         if Keys:hasKey(plate) then return end
 
         -- Počakaj da se vozilo popolnoma naloži
-        Citizen.Wait(1000)
+        Citizen.Wait(1500)
+
+        -- Ponovno preveri po čakanju
+        if Keys:hasKey(plate) then return end
 
         -- Če smo že dali ključ za to tablico, preskoči
         if givenKeys[plate] then return end
 
-        -- Preveri lastništvo preko server callbacka
-        local isOwner = lib.callback.await('qc_vehiclekeys:checkVehicleOwner', false, plate)
+        -- Preveri lastništvo preko server callbacka z error handlingom
+        local success, isOwner = pcall(function()
+            return lib.callback.await('qc_vehiclekeys:checkVehicleOwner', false, plate)
+        end)
 
-        if isOwner then
+        if success and isOwner then
             givenKeys[plate] = true
             Keys:createKey(plate, value)
             Bridge.Notify.showNotify(locale('vehicle_unlocked'), 'success')
+            return
         end
+
+        -- Fallback: če callback ne dela, poskusimo direktno
+        TriggerServerEvent('qc_vehiclekeys/server/checkAndGiveKey', plate)
     end)
 end
+
+-- Odgovor iz serverja za fallback
+RegisterNetEvent('qc_vehiclekeys/client/keyResult', function(plate, success)
+    if success then
+        givenKeys[plate] = true
+        Bridge.Notify.showNotify(locale('vehicle_unlocked'), 'success')
+    end
+end)
 
 Citizen.CreateThread(function()
     Citizen.Wait(3000)

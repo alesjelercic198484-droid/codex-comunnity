@@ -69,12 +69,11 @@ lib.callback.register('qc_vehiclekeys:checkVehicleOwner', function(src, plate)
     )
 
     if result and result > 0 then
-        -- Auto-daj ključ
         Keys:createKey(src, plate, nil)
         return true
     end
 
-    -- Fallback: preveri tudi z LIKE za tablice s presledki
+    -- Fallback: preveri tudi z TRIM za tablice s presledki
     local result2 = MySQL.scalar.await(
         'SELECT COUNT(*) FROM player_vehicles WHERE TRIM(plate) = ? AND citizenid = ?',
         { plate, citizenid }
@@ -86,6 +85,37 @@ lib.callback.register('qc_vehiclekeys:checkVehicleOwner', function(src, plate)
     end
 
     return false
+end)
+
+-- Fallback server event če callback ne dela
+RegisterNetEvent('qc_vehiclekeys/server/checkAndGiveKey', function(plate)
+    local src = source
+    if not plate or plate == '' then return end
+    plate = Utils:trim(plate)
+
+    local citizenid = Bridge.Framework.getPlayerIdentifier(src)
+    if not citizenid then return end
+
+    local result = MySQL.scalar.await(
+        'SELECT COUNT(*) FROM player_vehicles WHERE plate = ? AND citizenid = ?',
+        { plate, citizenid }
+    )
+
+    if result and result > 0 then
+        Keys:createKey(src, plate, nil)
+        TriggerClientEvent('qc_vehiclekeys/client/keyResult', src, plate, true)
+        return
+    end
+
+    local result2 = MySQL.scalar.await(
+        'SELECT COUNT(*) FROM player_vehicles WHERE TRIM(plate) = ? AND citizenid = ?',
+        { plate, citizenid }
+    )
+
+    if result2 and result2 > 0 then
+        Keys:createKey(src, plate, nil)
+        TriggerClientEvent('qc_vehiclekeys/client/keyResult', src, plate, true)
+    end
 end)
 
 Citizen.CreateThread(function()
