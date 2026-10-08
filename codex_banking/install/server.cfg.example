@@ -1,0 +1,18 @@
+# CodeX Banking — QBCore server.cfg example
+# Generate a private long random value and keep it server-side. Do not publish it.
+set codex_banking:pinSecret "REPLACE_WITH_A_LONG_RANDOM_SERVER_SECRET"
+
+# Ensure the database and core framework first.
+ensure oxmysql
+ensure qb-core
+
+# Inventory is optional for banking. It is used by the safe-box stash bridge.
+# ensure qb-inventory
+# or: ensure ox_inventory
+
+# Stop the old banking resource if it registers the same /bank command or NUI.
+# stop qb-banking
+ensure codex_banking
+
+# Optional ACE permission for /bankadmin (QBCore admin/god groups also work):
+# add_ace group.admin codex.banking.admin allow
