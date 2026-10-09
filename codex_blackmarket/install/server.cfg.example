@@ -1,0 +1,15 @@
+# Start order: oxmysql and QBCore dependencies first.
+ensure oxmysql
+ensure qb-core
+ensure qb-target
+ensure qb-inventory
+ensure codex_blackmarket
+
+# OneSync is required for the server-side location checks used by the market,
+# warehouse terminals and cargo run delivery points.
+set onesync on
+
+# Optional ACE permission for the in-game admin panel (/bmadmin).
+add_ace group.admin codex_blackmarket.admin allow
+# Or grant a specific identifier:
+# add_principal identifier.license:YOUR_LICENSE group.admin

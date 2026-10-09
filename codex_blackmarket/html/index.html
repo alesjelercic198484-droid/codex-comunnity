@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Market</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="hidden" aria-hidden="true">
+        <div class="scrim"></div>
+        <main class="terminal">
+            <aside class="sidebar">
+                <div class="brand-lockup">
+                    <div class="brand-mark"><span>BM</span><i></i></div>
+                    <div>
+                        <div class="brand-name">BLACK<span>MARKET</span></div>
+                        <div class="brand-subtitle">ENCRYPTED EXCHANGE</div>
+                    </div>
+                </div>
+
+                <div class="connection-card">
+                    <div class="connection-head"><span class="pulse"></span> SECURE CHANNEL</div>
+                    <div class="connection-copy">End-to-end session active</div>
+                    <div class="connection-code">NODE <b>LS-09 / PRIVATE</b></div>
+                </div>
+
+                <div class="nav-heading">NETWORK</div>
+                <nav id="nav" class="nav-list" aria-label="Black market sections"></nav>
+
+                <div class="sidebar-bottom">
+                    <div class="rank-mini">
+                        <div class="rank-emblem">⌬</div>
+                        <div class="rank-copy">
+                            <span>ACCESS LEVEL</span>
+                            <strong id="sidebarLevel">01</strong>
+                        </div>
+                        <div class="rank-respect"><span>RESPECT</span><b id="sidebarRespect">0</b></div>
+                    </div>
+                    <button id="closeButton" class="disconnect-button"><span>×</span> Disconnect <kbd>ESC</kbd></button>
+                </div>
+            </aside>
+
+            <section class="workspace">
+                <header class="topbar">
+                    <div class="heading-block">
+                        <div class="breadcrumbs"><span>UNDERGROUND NETWORK</span><b>/</b><span id="crumbCurrent">EXCHANGE</span></div>
+                        <h1 id="pageTitle">Black Market</h1>
+                        <p id="pageSubtitle">Unmarked goods. Discreet transactions.</p>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="market-open-pill"><span class="pulse"></span><span id="openStatus">CONTACT ONLINE</span></div>
+                        <div class="player-chip">
+                            <div class="player-avatar" id="playerInitial">?</div>
+                            <div><strong id="playerName">Unknown</strong><span id="playerRank">Level 1 Operative</span></div>
+                            <div class="player-chevron">⌄</div>
+                        </div>
+                    </div>
+                </header>
+
+                <div id="content" class="content"></div>
+                <footer class="terminal-footer"><span><i></i> CONNECTION ENCRYPTED</span><span>NO REFUNDS. NO RECORDS.</span><span id="footerTime">LOCAL NODE · 22:00—10:00</span></footer>
+            </section>
+        </main>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
