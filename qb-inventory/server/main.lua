@@ -126,6 +126,10 @@ local function BuildItem(name, amount, slot, info)
         if item.info.quality == nil then
             item.info.quality = 100
         end
+        -- qb-weapons reads info.ammo without a fallback, so always store it.
+        if item.info.ammo == nil then
+            item.info.ammo = 0
+        end
     end
 
     item.rarity = RarityOf(item.name)
@@ -162,10 +166,41 @@ local function GetPlayerItems(source)
 end
 
 --- Resolves an identifier to (items, maxweight, slots, player).
+--- Older qb-core databases store the inventory as a JSON object, so
+--- `json.decode` hands us STRING keys ("1", "2", ...). Every slot lookup in
+--- this file uses numbers, so we fold those back to numeric keys once. Without
+--- this, items look present but `items[1]` is nil and using / moving them does
+--- absolutely nothing.
+local function NormalizeSlotKeys(items)
+    if type(items) ~= 'table' then return false end
+
+    local toMove = {}
+
+    for key, value in pairs(items) do
+        if type(key) == 'string' then
+            local index = tonumber(key)
+
+            if index and index >= 1 and index == math.floor(index) then
+                toMove[#toMove + 1] = { key = key, index = index, value = value }
+            end
+        end
+    end
+
+    for _, entry in ipairs(toMove) do
+        items[entry.key] = nil
+        if items[entry.index] == nil then
+            items[entry.index] = entry.value
+        end
+    end
+
+    return #toMove > 0
+end
+
 local function ResolveTarget(identifier, requireCapacity)
     if type(identifier) == 'number' then
         local player = Core.GetPlayer(identifier)
         if not player then return nil end
+        NormalizeSlotKeys(player.PlayerData.items)
         return player.PlayerData.items, Config.MaxWeight, Config.MaxSlots, player
     end
 
@@ -176,6 +211,7 @@ local function ResolveTarget(identifier, requireCapacity)
     if kind == 'otherplayer' then
         local target = Core.GetPlayer(tonumber(value))
         if not target then return nil end
+        NormalizeSlotKeys(target.PlayerData.items)
         return target.PlayerData.items, Config.MaxWeight, Config.MaxSlots, target
     end
 
@@ -293,14 +329,39 @@ function GetTotalWeight(items)
     return weight
 end
 
+--- Reads a slot, tolerating both numeric and string keys.
+local function GetAt(items, slot)
+    if type(items) ~= 'table' then return nil end
+
+    local index = SanitizeSlot(slot)
+    if not index then return nil end
+
+    local value = items[index]
+
+    if value == nil then
+        value = items[tostring(index)]
+    end
+
+    return value
+end
+
+--- Empties a slot, clearing both the numeric and the string key so an
+--- inventory that was decoded from a JSON object really loses the item.
+local function ClearSlot(items, slot)
+    if type(items) ~= 'table' then return end
+
+    local index = SanitizeSlot(slot)
+    if not index then return end
+
+    items[index] = nil
+    items[tostring(index)] = nil
+end
+
 local function GetItemAt(identifier, slot)
     local items = ResolveTarget(identifier)
     if not items then return nil end
 
-    slot = SanitizeSlot(slot)
-    if not slot then return nil end
-
-    return items[slot]
+    return GetAt(items, slot)
 end
 
 --- Pushes the current state of a player inventory + optional second panel.
@@ -324,6 +385,14 @@ local function FormatForClient(identifier, source)
         slots = slots or Config.MaxSlots,
         inventory = dense,
     }
+end
+
+
+--- Always sends a dense 1..slots array to the UI so JavaScript never has to
+--- guess whether it received an array or an object.
+local function DenseItems(identifier)
+    local formatted = FormatForClient(identifier)
+    return formatted and formatted.inventory or {}
 end
 
 --- Sends the current state of one player's inventory (plus his second panel).
@@ -482,18 +551,33 @@ function UseItem(itemName, source, item, ...)
 
     if not QBCore.Functions.CanUseItem then return false end
 
-    local itemData = QBCore.Functions.CanUseItem(itemName)
+    local registered = QBCore.Functions.CanUseItem(itemName)
 
-    if type(itemData) ~= 'table' or type(itemData.func) ~= 'function' then
-        return false
+    -- qb-core stores usable items in two different shapes depending on version:
+    --   newer:  QBCore.UsableItems[name] = { func = <fn>, resource = ... }
+    --   older:  QBCore.UsableItems[name] = <fn>
+    -- Both have to work or every usable item (food, medkits, tools, ...) is
+    -- silently dead on servers running the older build.
+    local callback = nil
+
+    if type(registered) == 'function' then
+        callback = registered
+    elseif type(registered) == 'table' then
+        if type(registered.func) == 'function' then
+            callback = registered.func
+        elseif type(registered.cb) == 'function' then
+            callback = registered.cb
+        end
     end
+
+    if not callback then return false end
 
     if type(item) ~= 'table' then
         item = GetItemByName(source, itemName) or
                { name = itemName, amount = 1, info = {} }
     end
 
-    local ok, err = pcall(itemData.func, source, item, ...)
+    local ok, err = pcall(callback, source, item, ...)
 
     if not ok then
         print(('^1[qb-inventory]^7 UseItem failed for "%s": %s'):format(itemName, tostring(err)))
@@ -772,7 +856,7 @@ function OpenInventoryById(source, targetId)
     OpenInventories[source] = identifier
 
     TriggerClientEvent('qb-inventory:client:openInventory', source,
-        player.PlayerData.items, FormatForClient(identifier, source))
+        DenseItems(source), FormatForClient(identifier, source))
 end
 
 function ClearStash(identifier)
@@ -868,7 +952,7 @@ function OpenShop(source, name)
     OpenInventories[source] = identifier
 
     TriggerClientEvent('qb-inventory:client:openInventory', source,
-        player.PlayerData.items, FormatForClient(identifier, source))
+        DenseItems(source), FormatForClient(identifier, source))
 end
 
 function OpenInventory(source, identifier, data)
@@ -878,7 +962,7 @@ function OpenInventory(source, identifier, data)
     if identifier == nil then
         OpenInventories[source] = nil
         TriggerClientEvent('qb-inventory:client:openInventory', source,
-            player.PlayerData.items, nil)
+            DenseItems(source), nil)
         return
     end
 
@@ -915,7 +999,7 @@ function OpenInventory(source, identifier, data)
     OpenInventories[source] = identifier
 
     TriggerClientEvent('qb-inventory:client:openInventory', source,
-        player.PlayerData.items, FormatForClient(identifier, source))
+        DenseItems(source), FormatForClient(identifier, source))
 end
 
 function CreateInventory(identifier, data)
@@ -1014,7 +1098,7 @@ function RemoveItem(identifier, item, amount, slot, reason, isInternalMove)
     slot = SanitizeSlot(slot)
 
     if slot then
-        local current = target[slot]
+        local current = GetAt(target, slot)
 
         if not current or current.name ~= item then return false end
 
@@ -1024,7 +1108,7 @@ function RemoveItem(identifier, item, amount, slot, reason, isInternalMove)
             current.amount = left
             target[slot] = current
         else
-            target[slot] = nil
+            ClearSlot(target, slot)
         end
 
         if player then
@@ -1063,7 +1147,7 @@ function RemoveItem(identifier, item, amount, slot, reason, isInternalMove)
                 current.amount = available - take
                 target[entry.slot] = current
             else
-                target[entry.slot] = nil
+                ClearSlot(target, entry.slot)
             end
 
             remaining = remaining - take
@@ -1159,7 +1243,7 @@ function OpenDrop(source, identifier)
     OpenInventories[source] = identifier
 
     TriggerClientEvent('qb-inventory:client:openInventory', source,
-        player.PlayerData.items, FormatForClient(identifier, source))
+        DenseItems(source), FormatForClient(identifier, source))
 end
 
 local function RemoveDrop(identifier)
@@ -1280,14 +1364,14 @@ end
 --- Both tables may be the SAME table (moving inside one inventory), so the
 --- writes are ordered to stay correct in that case.
 local function MoveItems(fromItems, fromSlot, toItems, toSlot, amount)
-    local item = fromItems[fromSlot]
+    local item = GetAt(fromItems, fromSlot)
     if type(item) ~= 'table' then return false end
 
     local total = tonumber(item.amount) or 1
     if amount > total then amount = total end
     if amount < 1 then return false end
 
-    local target = toItems[toSlot]
+    local target = GetAt(toItems, toSlot)
 
     -- 1) stack into an existing, non unique stack of the same item
     if target and target.name == item.name and not target.unique then
@@ -1295,7 +1379,7 @@ local function MoveItems(fromItems, fromSlot, toItems, toSlot, amount)
             item.amount = total - amount
             fromItems[fromSlot] = item
         else
-            fromItems[fromSlot] = nil
+            ClearSlot(fromItems, fromSlot)
         end
 
         target.amount = (tonumber(target.amount) or 0) + amount
@@ -1318,7 +1402,7 @@ local function MoveItems(fromItems, fromSlot, toItems, toSlot, amount)
 
     -- 3) empty target - move everything
     if amount >= total then
-        fromItems[fromSlot] = nil
+        ClearSlot(fromItems, fromSlot)
         item.slot = toSlot
         toItems[toSlot] = item
         return true
@@ -1357,14 +1441,14 @@ local function DoSetInventoryData(source, fromInventory, toInventory, fromSlot, 
     -- Dropping onto itself is a no-op.
     if fromId == toId and fromSlot == toSlot then return false end
 
-    local fromItem = fromItems[fromSlot]
+    local fromItem = GetAt(fromItems, fromSlot)
     if type(fromItem) ~= 'table' then return false end
 
     local total = tonumber(fromItem.amount) or 1
     if toAmount > total then toAmount = total end
 
     local sameInventory = (fromId == toId)
-    local target = toItems[toSlot]
+    local target = GetAt(toItems, toSlot)
 
     -- Capacity checks (only meaningful when moving into a different container).
     if not sameInventory then
@@ -1465,26 +1549,58 @@ local function HandleCloseInventory(src, inventory)
     OpenInventories[src] = nil
 end
 
+--- True when the qb-weapons resource is actually running.
+--- Checked every time on purpose: resources can be started or restarted at any
+--- moment, and a cached answer would silently break weapons after a restart.
+local function HasWeaponsResource()
+    local ok, state = pcall(function()
+        return GetResourceState('qb-weapons')
+    end)
+
+    return (ok and state == 'started')
+end
+
 local function HandleUseItem(src, item)
     if type(item) ~= 'table' then return end
 
     local slot = SanitizeSlot(item.slot)
-    if not slot then return end
+    local itemData = nil
 
-    local itemData = GetItemBySlot(src, slot)
+    if slot then
+        itemData = GetItemBySlot(src, slot)
+    end
+
+    -- The slot the UI clicked can be stale (the inventory changed between the
+    -- click and the event). Fall back to the item name before giving up.
+    if (not itemData) or (type(item.name) == 'string' and item.name ~= itemData.name) then
+        if type(item.name) == 'string' then
+            itemData = GetItemByName(src, item.name) or itemData
+        end
+    end
+
     if not itemData then return end
 
     local itemInfo = Core.SharedItem(itemData.name)
 
     if itemData.type == 'weapon' then
-        TriggerClientEvent('qb-weapons:client:UseWeapon', src, itemData,
-            itemData.info and itemData.info.quality and itemData.info.quality > 0)
+        -- qb-weapons tracks ammo, attachments, tints and quality. When it is
+        -- not installed we equip the weapon ourselves so weapons never just
+        -- "do nothing".
+        if HasWeaponsResource() then
+            TriggerClientEvent('qb-weapons:client:UseWeapon', src, itemData,
+                itemData.info and itemData.info.quality and itemData.info.quality > 0)
+        else
+            TriggerClientEvent('qb-inventory:client:EquipWeapon', src, itemData)
+        end
+
         TriggerClientEvent('qb-inventory:client:ItemBox', src, itemInfo or itemData, 'use')
         return
     end
 
-    if not itemData.useable then return end
-
+    -- NOTE: deliberately no `itemData.useable` check here.
+    -- Stored inventories often keep an outdated `useable` flag. The original
+    -- qb-inventory only checks whether a usable callback exists, and so do we:
+    -- if somebody registered the item, run it, otherwise do nothing.
     if UseItem(itemData.name, src, itemData) then
         TriggerClientEvent('qb-inventory:client:ItemBox', src, itemInfo or itemData, 'use')
     end
@@ -1548,7 +1664,7 @@ RegisterNetEvent('qb-inventory:server:openVending', function(data)
     OpenInventories[src] = identifier
 
     TriggerClientEvent('qb-inventory:client:openInventory', src,
-        player.PlayerData.items, FormatForClient(identifier, src))
+        DenseItems(src), FormatForClient(identifier, src))
 end)
 
 -- Legacy `inventory:server:*` aliases ---------------------------------------

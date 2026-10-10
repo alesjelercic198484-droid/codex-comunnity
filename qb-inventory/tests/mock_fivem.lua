@@ -186,6 +186,18 @@ _G.exports = setmetatable({}, {
 
 Mock.registered = registered
 
+-- Resource states. Tests flip this to check both the qb-weapons path and the
+-- built in fallback.
+Mock.resources = { ['qb-weapons'] = 'started' }
+
+function GetResourceState(name)
+    return Mock.resources[name] or 'missing'
+end
+
+function Mock.SetResourceState(name, state)
+    Mock.resources[name] = state
+end
+
 function Mock.Export(name, ...)
     local fn = registered[name]
     if not fn then error('export not registered: ' .. tostring(name), 2) end
@@ -347,6 +359,12 @@ QBCore.UsableItems = {}
 
 function QBCore.Functions.CreateUseableItem(item, cb)
     QBCore.UsableItems[item] = { func = cb, resource = 'test' }
+end
+
+-- Legacy qb-core stores the callback itself, not a table around it.
+-- qb-inventory must run usable items on BOTH shapes.
+function Mock.CreateLegacyUseableItem(item, cb)
+    QBCore.UsableItems[item] = cb
 end
 
 function QBCore.Functions.CanUseItem(item)

@@ -256,13 +256,71 @@ RegisterNetEvent('qb-inventory:client:updateInventory', function(fromInventory, 
     SendNUI({ action = 'rejectMove', slot = errorSlot })
 end)
 
+--- The weapon we are holding through the built in fallback.
+local EquippedWeapon = nil
+
+--- Weapons that must never run out of ammo.
+local INFINITE_AMMO = {
+    weapon_petrolcan = 4000,
+    weapon_fireextinguisher = 4000,
+    weapon_snowball = 10,
+}
+
 RegisterNetEvent('qb-inventory:client:CheckWeapon', function(weaponName)
     local ped = PlayerPedId()
     local current = GetSelectedPedWeapon(ped)
 
     if current == GetHashKey(weaponName or '') then
         SetCurrentPedWeapon(ped, GetHashKey('WEAPON_UNARMED'), true)
+        EquippedWeapon = nil
     end
+end)
+
+--- Built in weapon equipping, used when the qb-weapons resource is not
+--- installed. Without this, using a weapon item does absolutely nothing.
+RegisterNetEvent('qb-inventory:client:EquipWeapon', function(itemData)
+    if type(itemData) ~= 'table' then return end
+
+    local ped = PlayerPedId()
+    local weaponName = tostring(itemData.name or '')
+
+    if weaponName == '' then return end
+
+    local info = type(itemData.info) == 'table' and itemData.info or {}
+    local weaponHash = GetHashKey(weaponName)
+
+    -- Using the weapon we already hold holsters it again, exactly like
+    -- qb-weapons behaves.
+    if EquippedWeapon == weaponName then
+        RemoveAllPedWeapons(ped, true)
+        SetCurrentPedWeapon(ped, GetHashKey('WEAPON_UNARMED'), true)
+        EquippedWeapon = nil
+        return
+    end
+
+    local ammo = tonumber(info.ammo) or 0
+
+    if INFINITE_AMMO[weaponName] then
+        ammo = INFINITE_AMMO[weaponName]
+    end
+
+    GiveWeaponToPed(ped, weaponHash, ammo, false, true)
+    SetPedAmmo(ped, weaponHash, ammo)
+    SetCurrentPedWeapon(ped, weaponHash, true)
+
+    if type(info.attachments) == 'table' then
+        for _, attachment in pairs(info.attachments) do
+            if type(attachment) == 'table' and attachment.component then
+                GiveWeaponComponentToPed(ped, weaponHash, GetHashKey(attachment.component))
+            end
+        end
+    end
+
+    if info.tint then
+        SetPedWeaponTintIndex(ped, weaponHash, tonumber(info.tint) or 0)
+    end
+
+    EquippedWeapon = weaponName
 end)
 
 -- Legacy `inventory:client:*` aliases --------------------------------------

@@ -456,6 +456,98 @@ ok(pcall(function()
 end), 'HasItem for an offline player does not throw')
 
 -- ---------------------------------------------------------------------------
+print('\n\27[1;36m== Server compatibility (older qb-core)\27[0m')
+
+-- 1) older qb-core registers the usable callback as a raw function
+Mock.AddItem('burger', { name = 'burger', label = 'Burger', weight = 200, type = 'item' })
+Mock.AddItem('water', { name = 'water', label = 'Water', weight = 500, type = 'item' })
+
+usedWith = {}
+Mock.CreateLegacyUseableItem('burger', function(source, item) usedWith[#usedWith + 1] = item end)
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'burger', 3)
+Mock.FireFromClient(P1, 'qb-inventory:server:useItem', { slot = 1, name = 'burger' })
+equals(#usedWith, 1, 'usable items registered as a raw function still run (older qb-core)')
+
+Mock.Export('UseItem', P1, { name = 'burger', amount = 1, info = {} })
+equals(#usedWith, 2, 'the UseItem export works with the legacy callback shape too')
+Mock.QBCore.UsableItems['burger'] = nil
+
+-- 2) a stored `useable = false` flag must not block a registered item
+usedWith = {}
+Mock.CreateUseableItem('water', function(source, item) usedWith[#usedWith + 1] = item end)
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'water', 2)
+local rawWater = Mock.Inventory(P1)[1]
+if rawWater then rawWater.useable = false end
+Mock.FireFromClient(P1, 'qb-inventory:server:useItem', { slot = 1, name = 'water' })
+equals(#usedWith, 1, 'a stale useable flag does not block the item')
+
+-- 3) weapons still get equipped when qb-weapons is NOT installed
+Mock.SetResourceState('qb-weapons', 'missing')
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'weapon_pistol', 1)
+Mock.FireFromClient(P1, 'qb-inventory:server:useItem', { slot = 1, name = 'weapon_pistol' })
+ok(Mock.LastClientEvent(P1, 'qb-inventory:client:EquipWeapon') ~= nil,
+    'weapons are equipped by the built in fallback when qb-weapons is missing')
+
+-- 4) and handed to qb-weapons when it IS running
+Mock.SetResourceState('qb-weapons', 'started')
+Mock.FireFromClient(P1, 'qb-inventory:server:useItem', { slot = 1, name = 'weapon_pistol' })
+ok(Mock.LastClientEvent(P1, 'qb-weapons:client:UseWeapon') ~= nil,
+    'weapons are handed to qb-weapons when it is started')
+
+-- 5) older qb-core databases hand over the inventory as a JSON OBJECT,
+--    so slot keys are strings ("1", "2", ...). Everything must still work.
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'burger', 1)
+local stringKeyed = {}
+for index, value in pairs(Mock.Inventory(P1)) do
+    stringKeyed[tostring(index)] = value
+end
+local player1 = Mock.QBCore.Functions.GetPlayer(P1)
+local savedItems = player1.PlayerData.items
+player1.PlayerData.items = stringKeyed
+
+ok(Mock.Export('HasItem', P1, 'burger') ~= nil, 'items stored under string slot keys are found')
+ok(Mock.Export('RemoveItem', P1, 'burger', 1) == true, 'items stored under string slot keys can be removed')
+
+player1.PlayerData.items = savedItems
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'lockpick', 1)
+Mock.Export('AddItem', P1, 'sandwich', 1)
+local stringKeyed2 = {}
+for index, value in pairs(Mock.Inventory(P1)) do
+    stringKeyed2[tostring(index)] = value
+end
+player1.PlayerData.items = stringKeyed2
+Mock.FireFromClient(P1, 'qb-inventory:server:SetInventoryData', 'player', 'player', 1, 2, 1, 1)
+equals(Mock.Inventory(P1)[2] and Mock.Inventory(P1)[2].name, 'lockpick',
+    'items under string slot keys can be moved')
+
+for index in pairs(Mock.Inventory(P1)) do
+    ok(type(index) == 'number', 'slot keys are normalised to numbers')
+end
+player1.PlayerData.items = savedItems
+
+-- 6) the UI always receives a dense array
+Mock.Export('ClearInventory', P1)
+Mock.Export('AddItem', P1, 'lockpick', 1)
+Mock.Export('AddItem', P1, 'sandwich', 1)
+Mock.clientEvents[P1] = {}
+Mock.Export('OpenInventory', P1, stashId)
+local captured = Mock.LastClientEvent(P1, 'qb-inventory:client:openInventory')
+ok(captured ~= nil, 'opening an inventory pushes a payload to the UI')
+
+local payload = captured and captured.args[1]
+local other = captured and captured.args[2]
+ok(type(payload) == 'table', 'the inventory sent to the UI is a table')
+ok(type(payload[1]) == 'table', 'the inventory sent to the UI is a dense array')
+ok(payload[2] ~= nil, 'the second slot of the dense array is filled in')
+ok(type(other) == 'table', 'the second panel is a table too')
+ok(type(other and other.inventory) == 'table', 'the second panel carries a dense inventory')
+
+-- ---------------------------------------------------------------------------
 print(('\n\27[1m%d passed, %d failed\27[0m'):format(passed, failed))
 
 if failed > 0 then
