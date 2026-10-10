@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CodeX Roleplay Inventory</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="theme-glass layout-showcase slot-rounded icon-squircle font-modern badge-stack weight-segment reveal-rise"
+      data-accent="emerald">
+
+<div id="app" class="hidden">
+
+  <!-- ================= BRAND (sits ABOVE the inventory) ================= -->
+  <header id="brand">
+    <div class="brand-left">
+      <div class="brand-logo" id="brandLogoWrap"><img id="brandLogo" alt="" /></div>
+      <div class="brand-titles">
+        <h1 class="brand-name" data-text="brand">CodeX Roleplay</h1>
+        <p class="brand-sub" data-text="brandSub">Inventory</p>
+      </div>
+    </div>
+
+    <div class="brand-right">
+      <div class="brand-chip" id="brandChip" title="Your server id">
+        <span class="chip-dot"></span>
+        <span data-text="serverId">ID</span>
+        <strong id="brandServerId">-</strong>
+      </div>
+      <button class="icon-btn" id="btnSettings" title="Settings studio" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65Z"/></svg>
+      </button>
+      <button class="icon-btn danger" id="btnClose" title="Close (ESC)" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= INVENTORY ================= -->
+  <main id="inventory">
+
+    <!-- ---------- LEFT: showcase / ped preview ---------- -->
+    <aside id="showcase">
+      <div class="ped-window" id="pedWindow">
+        <div class="ped-fallback" id="pedFallback">
+          <svg viewBox="0 0 120 220" class="ped-silhouette">
+            <circle cx="60" cy="34" r="22"/>
+            <path d="M60 60c-16 0-29 10-33 25l-8 40h18l4 55h12l6-42 1 42h12l5-42 6 42h12l4-55h18l-8-40c-4-15-17-25-33-25z"/>
+          </svg>
+        </div>
+        <div class="ped-glow"></div>
+      </div>
+
+      <div class="ped-card">
+        <div class="ped-avatar" id="pedAvatar">?</div>
+        <div class="ped-meta">
+          <div class="ped-name" id="pedName">Citizen</div>
+          <div class="ped-job" id="pedJob">Unemployed</div>
+          <div class="ped-cid" id="pedCid"></div>
+        </div>
+      </div>
+
+      <div class="wallet">
+        <div class="wallet-row cash">
+          <span class="wallet-icon">$</span>
+          <span class="wallet-label" data-text="cash">Cash</span>
+          <span class="wallet-value" id="walletCash">0</span>
+        </div>
+        <div class="wallet-row bank">
+          <span class="wallet-icon">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 3 2 8h2v8h4v-6h8v6h4V8h2L12 3m0 2.1L16.6 8H7.4L12 5.1M6 10h3v4H6v-4m9 0h3v4h-3v-4Z"/></svg>
+          </span>
+          <span class="wallet-label" data-text="bank">Bank</span>
+          <span class="wallet-value" id="walletBank">0</span>
+        </div>
+      </div>
+
+      <div class="hotbar-wrap">
+        <div class="section-title" data-text="hotbar">Hotbar</div>
+        <div id="hotbar" class="hotbar"></div>
+      </div>
+    </aside>
+
+    <!-- ---------- RIGHT: item panels ---------- -->
+    <section id="panels">
+
+      <!-- tool bar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9.5 3a6.5 6.5 0 0 1 5.13 10.5l4.44 4.43-1.42 1.42-4.43-4.44A6.5 6.5 0 1 1 9.5 3m0 2a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9Z"/></svg>
+          <input id="search" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Search items..." data-text-ph="search" />
+          <button class="search-clear" id="searchClear" title="Clear">&times;</button>
+        </div>
+
+        <div class="layouts" id="layouts">
+          <button class="layout-btn" data-layout="showcase" title="Showcase (3D character)">Showcase</button>
+          <button class="layout-btn" data-layout="classic" title="Classic tiles">Classic</button>
+          <button class="layout-btn" data-layout="grid" title="Dense grid">Grid</button>
+          <button class="layout-btn" data-layout="tarkov" title="Tarkov density">Tarkov</button>
+        </div>
+      </div>
+
+      <!-- weight -->
+      <div class="weight-wrap" id="weightWrap">
+        <div class="weight-label">
+          <span data-text="weight">Weight</span>
+          <strong id="weightText">0 / 120 kg</strong>
+        </div>
+        <div class="weight-track" id="weightTrack"><div class="weight-fill" id="weightFill"></div></div>
+      </div>
+
+      <!-- player grid -->
+      <div class="panel-title">
+        <span data-text="yourInventory">Your inventory</span>
+        <span class="slot-count" id="playerSlotCount">0/40</span>
+      </div>
+      <div id="playerGrid" class="grid" data-inv="player"></div>
+
+      <!-- second inventory (stash / drop / trunk / shop / player) -->
+      <div id="otherPanel" class="other-panel hidden">
+        <div class="panel-title">
+          <span id="otherLabel">Container</span>
+          <span class="slot-count" id="otherSlotCount">0/0</span>
+        </div>
+        <div class="other-weight" id="otherWeight"></div>
+        <div id="otherGrid" class="grid" data-inv="other"></div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<!-- ================= FLOATING UI ================= -->
+<div id="dragGhost" class="hidden"><img id="dragGhostImg" alt="" /><span id="dragGhostAmount"></span></div>
+
+<div id="contextMenu" class="hidden">
+  <div class="cm-head" id="cmHead">Item</div>
+  <div class="cm-items" id="cmItems"></div>
+</div>
+
+<div id="quantityModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-title" data-text="amount">Amount</div>
+    <div class="modal-row">
+      <button class="qty-btn" data-qty="min">Min</button>
+      <input id="qtyInput" type="number" min="1" value="1" />
+      <button class="qty-btn" data-qty="max">Max</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="qtyCancel" data-text="cancel">Cancel</button>
+      <button class="btn primary" id="qtyConfirm" data-text="confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- toasts -->
+<div id="toasts"></div>
+
+<!-- drop hint (browser preview only) -->
+<div id="previewNote" class="hidden">Browser preview &mdash; mock data. In game this area shows your live 3D character.</div>
+
+<!-- settings studio -->
+<div id="settings" class="modal hidden">
+  <div class="settings-box">
+    <div class="settings-head">
+      <h2 data-text="settingsStudio">Settings studio</h2>
+      <button class="icon-btn" id="settingsClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <div class="settings-tabs" id="settingsTabs">
+      <button class="stab active" data-tab="layout" data-text="tabLayout">Layout</button>
+      <button class="stab" data-tab="theme" data-text="tabTheme">Theme</button>
+      <button class="stab" data-tab="slots" data-text="tabSlots">Slots</button>
+      <button class="stab" data-tab="rarity" data-text="tabRarity">Rarity</button>
+      <button class="stab" data-tab="motion" data-text="tabMotion">Motion</button>
+      <button class="stab" data-tab="texts" data-text="tabTexts">Texts</button>
+      <button class="stab" data-tab="admin" data-text="tabAdmin">Admin</button>
+    </div>
+
+    <div class="settings-body" id="settingsBody"></div>
+
+    <div class="settings-foot">
+      <button class="btn ghost" id="settingsReset" data-text="reset">Reset</button>
+      <div class="foot-right">
+        <span class="locked-badge hidden" id="lockedBadge" data-text="lockedByAdmin">Locked by admin</span>
+        <button class="btn primary" id="settingsSave" data-text="save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="cursorTrail"></canvas>
+
+<script src="locales.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

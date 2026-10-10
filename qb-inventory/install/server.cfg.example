@@ -1,0 +1,30 @@
+# =============================================================================
+#  CodeX Roleplay Inventory - server.cfg
+#
+#  This resource REPLACES the stock qb-inventory. It has to be named
+#  `qb-inventory` and it has to start AFTER qb-core.
+# =============================================================================
+
+# --- framework (must be above) ---
+ensure qb-core
+
+# --- hard dependency of the inventory ---
+ensure qb-weapons          # weapons equipping (optional but recommended)
+
+# --- the inventory itself -----------------------------------------------------
+# NOTE: delete / disable the old qb-inventory first, then drop this folder in
+#       as `resources/[qb]/qb-inventory`
+ensure qb-inventory
+
+# --- scripts that talk to the inventory (they keep working untouched) --------
+ensure qb-shops
+ensure qb-truckerjob
+ensure qb-ambulancejob
+# ... the rest of your qb-core scripts
+
+# -----------------------------------------------------------------------------
+#  Optional: give admins permission to push the UI look to the whole server
+#  (the in-game settings studio -> Admin tab).
+#  Add this to server.cfg, then the ace below in your permissions file.
+# -----------------------------------------------------------------------------
+add_ace group.admin inventory.admin allow
