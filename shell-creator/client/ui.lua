@@ -2,16 +2,17 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local nuiOpen = false
 
 function OpenShellCreatorMenu()
-    if not HasPermission() then
-        QBCore.Functions.Notify('Nimaš dovoljenja!', 'error')
-        return
-    end
+    print('[ShellCreator] Odpiram NUI menu...')
+    
     nuiOpen = true
     SetNuiFocus(true, true)
 
+    local props = GetFormattedPropList()
+    print('[ShellCreator] Props:', #props, 'kategorij')
+    
     local data = {
         action = 'openMenu',
-        props = GetFormattedPropList(),
+        props = props,
         colors = GetFormattedColorList(),
         templates = GetFormattedTemplates(),
         slots = GetFormattedSlots(),
@@ -21,7 +22,10 @@ function OpenShellCreatorMenu()
         maxFloors = Config.Editor.maxFloors,
         isEditing = editorActive,
     }
+    
+    print('[ShellCreator] Pošiljam NUI message...')
     SendNUIMessage(data)
+    print('[ShellCreator] Menu odprt!')
 end
 
 function CloseShellCreatorMenu()

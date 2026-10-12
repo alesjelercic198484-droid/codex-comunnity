@@ -24,9 +24,21 @@ end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    isLoggedIn = true
-    TriggerServerEvent('shellCreator:server:requestShells')
-    TriggerServerEvent('shellCreator:server:requestTeleporters')
+    print('[ShellCreator] Resource se zaganja...')
+    
+    -- Preveri če je igralec že prijavljen
+    CreateThread(function()
+        Wait(3000)
+        local PlayerData = QBCore.Functions.GetPlayerData()
+        if PlayerData and PlayerData.citizenid then
+            isLoggedIn = true
+            print('[ShellCreator] Igralec je že prijavljen')
+            TriggerServerEvent('shellCreator:server:requestShells')
+            TriggerServerEvent('shellCreator:server:requestTeleporters')
+        else
+            print('[ShellCreator] Igralec še ni prijavljen, čakam...')
+        end
+    end)
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
@@ -36,22 +48,49 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 -- COMMANDS
-RegisterCommand(Config.QBCore.commandName, function()
-    if not HasPermission() then return end
+RegisterCommand('shellcreator', function()
+    print('[ShellCreator] Komanda shellcreator klicana')
+    
+    if not isLoggedIn then
+        print('[ShellCreator] Igralec ni prijavljen')
+        QBCore.Functions.Notify('Nisi prijavljen!', 'error')
+        return
+    end
+    
+    local hasPerm = HasPermission()
+    print('[ShellCreator] HasPermission:', hasPerm)
+    
+    if not hasPerm then
+        print('[ShellCreator] Nima permission-ov')
+        QBCore.Functions.Notify('Nimaš dovoljenja!', 'error')
+        return
+    end
+    
+    print('[ShellCreator] Odpiram menu...')
+    OpenShellCreatorMenu()
+end, false)
+
+RegisterCommand('shelltp', function(source, args)
+    print('[ShellCreator] Komanda shelltp klicana')
+    
     if not isLoggedIn then
         QBCore.Functions.Notify('Nisi prijavljen!', 'error')
         return
     end
-    OpenShellCreatorMenu()
-end, false)
-
-RegisterCommand(Config.QBCore.teleportCommand, function(source, args)
-    if not HasPermission() then return end
-    if not args[1] then
-        QBCore.Functions.Notify('Uporaba: /' .. Config.QBCore.teleportCommand .. ' [shell_id]', 'error')
+    
+    if not HasPermission() then
+        QBCore.Functions.Notify('Nimaš dovoljenja!', 'error')
         return
     end
+    
+    if not args[1] then
+        QBCore.Functions.Notify('Uporaba: /shelltp [shell_id]', 'error')
+        return
+    end
+    
     local shellId = tonumber(args[1])
+    print('[ShellCreator] Teleport do shell ID:', shellId)
+    
     if shellId then
         TriggerServerEvent('shellCreator:server:teleportToShell', shellId)
     else
@@ -60,21 +99,62 @@ RegisterCommand(Config.QBCore.teleportCommand, function(source, args)
 end, false)
 
 RegisterCommand('shelllist', function()
-    if not HasPermission() then return end
+    print('[ShellCreator] Komanda shelllist klicana')
+    
+    if not isLoggedIn then
+        QBCore.Functions.Notify('Nisi prijavljen!', 'error')
+        return
+    end
+    
+    if not HasPermission() then
+        QBCore.Functions.Notify('Nimaš dovoljenja!', 'error')
+        return
+    end
+    
     TriggerServerEvent('shellCreator:server:getStats')
 end, false)
 
 -- PERMISSIONS
 function HasPermission()
+    print('[ShellCreator] Preverjam HasPermission...')
+    
+    -- Najprej preveri ACE permissions
     if Config.UseAcePerms then
-        return IsPlayerAceAllowed(PlayerId(), Config.AcePermission)
-    else
-        local PlayerData = QBCore.Functions.GetPlayerData()
-        if PlayerData and PlayerData.group then
-            return PlayerData.group == Config.AdminPermission or PlayerData.group == 'god'
+        local playerId = PlayerId()
+        print('[ShellCreator] PlayerId:', playerId)
+        local hasAce = IsPlayerAceAllowed(playerId, Config.AcePermission)
+        print('[ShellCreator] ACE check result:', hasAce)
+        if hasAce then
+            print('[ShellCreator] ACE permission OK')
+            return true
         end
-        return false
     end
+    
+    -- Potem preveri qb-core group
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    if PlayerData then
+        print('[ShellCreator] PlayerData obstaja')
+        
+        -- Preveri group
+        if PlayerData.group then
+            print('[ShellCreator] Group:', PlayerData.group)
+            if PlayerData.group == Config.AdminPermission or PlayerData.group == 'god' or PlayerData.group == 'admin' then
+                print('[ShellCreator] Group permission OK')
+                return true
+            end
+        end
+        
+        -- Preveri če ima citizenid (pomeni da je prijavljen)
+        if PlayerData.citizenid then
+            print('[ShellCreator] Igralec ima citizenid - omogočam')
+            return true
+        end
+    else
+        print('[ShellCreator] PlayerData NE obstaja')
+    end
+    
+    print('[ShellCreator] Permission zavrnjen')
+    return false
 end
 
 exports('HasPermission', HasPermission)
