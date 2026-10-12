@@ -1,0 +1,17 @@
+# ---------------------------------------------------------------------------
+# CodeX Wallet - server.cfg snippet
+# ---------------------------------------------------------------------------
+
+# oxmysql must start before codex_wallet
+ensure oxmysql
+ensure qb-core
+ensure qb-inventory   # or ox_inventory
+
+ensure codex_wallet
+
+# Discord webhook for the logging system (optional - overrides config.lua).
+# set codex_wallet:webhook "https://discord.com/api/webhooks/XXXX/YYYY"
+
+# Permission for the /wallettest admin command (optional when the player
+# already has QBCore admin/god permission).
+# add_ace group.admin codexwallet.admin allow

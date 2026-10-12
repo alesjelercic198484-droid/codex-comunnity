@@ -1,0 +1,853 @@
+/* ==========================================================================
+   CodeX Wallet - NUI styles
+   Premium dark leather + gold aesthetic.
+   ========================================================================== */
+
+:root {
+    --bg-deep: #0d0b09;
+    --bg-shell: #161210;
+    --bg-panel: #1d1815;
+    --bg-panel-2: #241d18;
+    --leather: #3a2a1d;
+    --leather-light: #5b3f2a;
+    --gold: #d4af37;
+    --gold-bright: #f5d67b;
+    --gold-dim: #8a7027;
+    --cream: #f3ead8;
+    --cream-dim: #c9bda6;
+    --muted: #8d8172;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    --font: 'Segoe UI', 'Inter', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --font-display: Georgia, 'Times New Roman', serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    color: var(--cream);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================================
+   Wallet window
+   ========================================================================== */
+
+#wallet-app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.25), rgba(6, 5, 4, 0.65));
+    animation: fadeIn 0.25s ease;
+}
+
+.wallet-shell {
+    width: min(1060px, 94vw);
+    height: min(760px, 92vh);
+    display: flex;
+    flex-direction: column;
+    background:
+        linear-gradient(160deg, rgba(58, 42, 29, 0.22), rgba(13, 11, 9, 0.0)),
+        var(--bg-shell);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(245, 214, 123, 0.12);
+    overflow: hidden;
+    animation: popIn 0.3s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+    position: relative;
+}
+
+.wallet-shell::before {
+    /* subtle leather texture overlay */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('images/leather.jpg');
+    background-size: 420px;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+/* Header ---------------------------------------------------------------- */
+.wallet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.07), transparent);
+    position: relative;
+    z-index: 2;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: #241a08;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold) 55%, var(--gold-dim));
+    box-shadow: 0 6px 18px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(100deg, var(--gold-bright), var(--gold) 60%, #b98f2b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.brand-tagline {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.serial-chip {
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-family: Consolas, 'Courier New', monospace;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(243, 234, 216, 0.14);
+    background: rgba(243, 234, 216, 0.05);
+    color: var(--cream-dim);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+    background: rgba(248, 113, 113, 0.18);
+    border-color: rgba(248, 113, 113, 0.5);
+    color: var(--red);
+}
+
+/* Hero ------------------------------------------------------------------ */
+.hero {
+    position: relative;
+    display: flex;
+    min-height: 148px;
+    margin: 16px 24px 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    background: var(--bg-panel);
+    z-index: 1;
+}
+
+.hero-art {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(90deg, rgba(13, 11, 9, 0.92) 30%, rgba(13, 11, 9, 0.35) 65%, rgba(13, 11, 9, 0.55)),
+        url('images/wallet_hero.jpg');
+    background-size: cover;
+    background-position: center 42%;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    padding: 22px 28px;
+}
+
+.hero-label {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+}
+
+.hero-holder strong {
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: 0.3px;
+    color: var(--cream);
+}
+
+.hero-job {
+    display: block;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--gold);
+    letter-spacing: 0.6px;
+}
+
+.hero-balance {
+    text-align: right;
+}
+
+.balance-value {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    background: linear-gradient(100deg, var(--gold-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 4px 24px rgba(212, 175, 55, 0.25);
+}
+
+.balance-value .currency {
+    font-size: 22px;
+    margin-right: 4px;
+    vertical-align: 6px;
+}
+
+.hero-meta {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--cream-dim);
+    letter-spacing: 0.5px;
+}
+
+.hero-meta .dot {
+    margin: 0 8px;
+    color: var(--gold-dim);
+}
+
+/* Body ------------------------------------------------------------------ */
+.wallet-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-rows: auto 1fr;
+    gap: 14px;
+    padding: 16px 24px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+#panel-cash {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+}
+
+#panel-cards {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    min-height: 0;
+}
+
+#panel-store {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    min-height: 0;
+}
+
+.panel {
+    background: linear-gradient(170deg, var(--bg-panel), var(--bg-panel-2));
+    border: 1px solid rgba(243, 234, 216, 0.07);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.panel-head h2 {
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--cream);
+}
+
+.count-chip {
+    font-size: 11px;
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    background: rgba(212, 175, 55, 0.08);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.chip-row {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    font-family: var(--font);
+    font-size: 11.5px;
+    color: var(--cream-dim);
+    background: rgba(243, 234, 216, 0.05);
+    border: 1px solid rgba(243, 234, 216, 0.12);
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chip:hover {
+    color: #241a08;
+    background: var(--gold);
+    border-color: var(--gold);
+}
+
+/* Cash controls */
+.cash-controls {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.amount-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: rgba(13, 11, 9, 0.55);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: var(--radius-sm);
+    padding: 0 14px;
+    transition: border-color 0.15s ease;
+}
+
+.amount-wrap:focus-within {
+    border-color: var(--gold);
+}
+
+.amount-prefix {
+    color: var(--gold);
+    font-size: 16px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.amount-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--cream);
+    font-size: 16px;
+    font-family: var(--font);
+    padding: 11px 0;
+    width: 100%;
+}
+
+.amount-wrap input::placeholder {
+    color: var(--muted);
+}
+
+/* hide number spinners */
+.amount-wrap input::-webkit-outer-spin-button,
+.amount-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.amount-wrap input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.hint {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+/* Buttons ---------------------------------------------------------------- */
+.btn {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: 0.6px;
+    border-radius: var(--radius-sm);
+    padding: 11px 20px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.16s ease;
+    white-space: nowrap;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-gold {
+    color: #241a08;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold) 60%, #c49a2e);
+    box-shadow: 0 6px 18px rgba(212, 175, 55, 0.28);
+}
+
+.btn-gold:hover {
+    filter: brightness(1.07);
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+}
+
+.btn-outline {
+    color: var(--cream);
+    background: rgba(243, 234, 216, 0.04);
+    border-color: rgba(243, 234, 216, 0.2);
+}
+
+.btn-outline:hover {
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.btn-small {
+    padding: 7px 13px;
+    font-size: 11px;
+    border-radius: 7px;
+}
+
+.btn-danger {
+    color: var(--red);
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.btn-danger:hover {
+    background: rgba(248, 113, 113, 0.18);
+    border-color: var(--red);
+}
+
+/* Cards grid ------------------------------------------------------------- */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+    overflow-y: auto;
+    align-content: start;
+    min-height: 0;
+}
+
+.doc-card {
+    position: relative;
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.13), rgba(58, 42, 29, 0.45));
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    cursor: pointer;
+    transition: all 0.16s ease;
+    overflow: hidden;
+}
+
+.doc-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--gold);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+
+.doc-card .doc-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.doc-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: rgba(212, 175, 55, 0.16);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.doc-name {
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--cream);
+    letter-spacing: 0.3px;
+}
+
+.doc-type {
+    display: block;
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-top: 1px;
+}
+
+.doc-holder {
+    font-size: 11px;
+    color: var(--cream-dim);
+    margin-bottom: 10px;
+}
+
+.doc-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* Store list ------------------------------------------------------------- */
+.store-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.store-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 12px;
+    background: rgba(13, 11, 9, 0.4);
+    border: 1px solid rgba(243, 234, 216, 0.08);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s ease;
+}
+
+.store-row:hover {
+    border-color: rgba(212, 175, 55, 0.35);
+}
+
+.store-row .doc-icon {
+    flex-shrink: 0;
+}
+
+.store-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.store-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--cream);
+}
+
+.store-desc {
+    display: block;
+    font-size: 10.5px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Empty states ----------------------------------------------------------- */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 26px 16px;
+    text-align: center;
+    color: var(--cream-dim);
+}
+
+.empty-state.small {
+    padding: 14px 10px;
+}
+
+.empty-icon {
+    font-size: 30px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
+.empty-state p {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.empty-state span {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* Footer ----------------------------------------------------------------- */
+.wallet-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 24px;
+    border-top: 1px solid rgba(212, 175, 55, 0.14);
+    font-size: 10.5px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(13, 11, 9, 0.35);
+    position: relative;
+    z-index: 1;
+}
+
+.footer-note {
+    color: var(--gold-dim);
+}
+
+/* Scrollbars ------------------------------------------------------------- */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+}
+
+/* ==========================================================================
+   Presented ID card overlay
+   ========================================================================== */
+
+#card-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.35), rgba(6, 5, 4, 0.72));
+    animation: fadeIn 0.22s ease;
+    z-index: 50;
+}
+
+.card-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: popIn 0.28s cubic-bezier(0.2, 0.9, 0.25, 1.1);
+}
+
+.presented-card {
+    width: 460px;
+    border-radius: 16px;
+    overflow: hidden;
+    background:
+        linear-gradient(150deg, rgba(212, 175, 55, 0.12), transparent 45%),
+        linear-gradient(170deg, #221b15, #171310);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(245, 214, 123, 0.2);
+}
+
+.pc-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.22);
+    background: rgba(212, 175, 55, 0.06);
+}
+
+.pc-seal {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #241a08;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold-dim));
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
+}
+
+.pc-title {
+    flex: 1;
+}
+
+.pc-title strong {
+    display: block;
+    font-size: 16px;
+    letter-spacing: 0.6px;
+}
+
+.pc-title span {
+    font-size: 9.5px;
+    letter-spacing: 2px;
+    color: var(--gold);
+}
+
+.pc-chip {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    font-weight: 700;
+    color: var(--green);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.1);
+    padding: 5px 9px;
+    border-radius: 999px;
+}
+
+.pc-body {
+    display: flex;
+    gap: 16px;
+    padding: 18px;
+}
+
+.pc-photo {
+    flex-shrink: 0;
+}
+
+.pc-photo-placeholder {
+    width: 92px;
+    height: 112px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--gold);
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.16), rgba(58, 42, 29, 0.4));
+    border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.pc-fields {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px 14px;
+    align-content: start;
+}
+
+.pc-field span {
+    display: block;
+    font-size: 8.5px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
+
+.pc-field strong {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--cream);
+    letter-spacing: 0.3px;
+    word-break: break-word;
+}
+
+.pc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 18px;
+    border-top: 1px solid rgba(212, 175, 55, 0.18);
+    font-size: 10px;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(13, 11, 9, 0.4);
+}
+
+.pc-presented {
+    color: var(--cream-dim);
+}
+
+.pc-presented strong {
+    color: var(--cream);
+}
+
+/* Animations ------------------------------------------------------------ */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

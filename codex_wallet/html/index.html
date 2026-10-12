@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeX Wallet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ============================ WALLET WINDOW ============================ -->
+    <div id="wallet-app" class="hidden">
+        <div class="wallet-shell">
+            <!-- Header -->
+            <header class="wallet-header">
+                <div class="brand">
+                    <div class="brand-mark">CX</div>
+                    <div class="brand-text">
+                        <h1 class="brand-name">CodeX Wallet</h1>
+                        <span class="brand-tagline">Advanced secure wallet</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="serial-chip" id="serial-chip">CXW-••••</div>
+                    <button class="icon-btn" id="btn-close" title="Close (ESC)">✕</button>
+                </div>
+            </header>
+
+            <!-- Hero -->
+            <section class="hero">
+                <div class="hero-art"></div>
+                <div class="hero-content">
+                    <div class="hero-holder">
+                        <span class="hero-label">Wallet holder</span>
+                        <strong id="hero-name">—</strong>
+                        <span class="hero-job" id="hero-job">—</span>
+                    </div>
+                    <div class="hero-balance">
+                        <span class="hero-label">Cash inside wallet</span>
+                        <div class="balance-value"><span class="currency">$</span><span id="hero-cash">0</span></div>
+                        <div class="hero-meta">
+                            <span id="hero-slots">0 / 8 slots</span>
+                            <span class="dot">•</span>
+                            <span id="hero-weight">0 g</span>
+                            <span class="dot">•</span>
+                            <span id="hero-citizenid">—</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Body -->
+            <main class="wallet-body">
+                <!-- Cash panel -->
+                <section class="panel" id="panel-cash">
+                    <div class="panel-head">
+                        <h2>💵 Cash</h2>
+                        <div class="chip-row">
+                            <button class="chip quick-amount" data-amount="100">$100</button>
+                            <button class="chip quick-amount" data-amount="500">$500</button>
+                            <button class="chip quick-amount" data-amount="1000">$1,000</button>
+                            <button class="chip quick-amount" data-amount="all">MAX</button>
+                        </div>
+                    </div>
+                    <div class="cash-controls">
+                        <div class="amount-wrap">
+                            <span class="amount-prefix">$</span>
+                            <input type="number" id="cash-amount" min="1" step="1" placeholder="Amount">
+                        </div>
+                        <button class="btn btn-gold" id="btn-deposit">Deposit</button>
+                        <button class="btn btn-outline" id="btn-withdraw">Withdraw</button>
+                    </div>
+                    <p class="hint" id="cash-hint">Money moves between your pocket (cash) and the wallet. Nothing is created or destroyed.</p>
+                </section>
+
+                <!-- Cards inside wallet -->
+                <section class="panel" id="panel-cards">
+                    <div class="panel-head">
+                        <h2>🪪 Documents &amp; cards</h2>
+                        <span class="count-chip" id="cards-count">0 / 8</span>
+                    </div>
+                    <div class="cards-grid" id="cards-grid">
+                        <!-- filled by app.js -->
+                    </div>
+                    <div class="empty-state hidden" id="cards-empty">
+                        <div class="empty-icon">👛</div>
+                        <p>Your wallet is empty.</p>
+                        <span>Store ID cards and documents from the list below.</span>
+                    </div>
+                </section>
+
+                <!-- Store from inventory -->
+                <section class="panel" id="panel-store">
+                    <div class="panel-head">
+                        <h2>📥 Store from inventory</h2>
+                    </div>
+                    <div class="store-list" id="store-list">
+                        <!-- filled by app.js -->
+                    </div>
+                    <div class="empty-state small hidden" id="store-empty">
+                        <p>Nothing storeable in your inventory.</p>
+                        <span>Only whitelisted ID cards and documents fit in the wallet.</span>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="wallet-footer">
+                <span id="footer-brand">CodeX Community • Premium Roleplay</span>
+                <span class="footer-note">Server-authoritative • Full logging • ESC to close</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ============================ PRESENTED ID CARD ============================ -->
+    <div id="card-overlay" class="hidden">
+        <div class="card-stage">
+            <div class="presented-card" id="presented-card">
+                <div class="pc-header">
+                    <div class="pc-seal">CX</div>
+                    <div class="pc-title">
+                        <strong id="pc-label">ID Card</strong>
+                        <span id="pc-agency">CODEX WALLET • SAN ANDREAS</span>
+                    </div>
+                    <div class="pc-chip">VERIFIED</div>
+                </div>
+                <div class="pc-body">
+                    <div class="pc-photo">
+                        <div class="pc-photo-placeholder" id="pc-initials">?</div>
+                    </div>
+                    <div class="pc-fields">
+                        <div class="pc-field"><span>First name</span><strong id="pc-firstname">—</strong></div>
+                        <div class="pc-field"><span>Last name</span><strong id="pc-lastname">—</strong></div>
+                        <div class="pc-field"><span>Date of birth</span><strong id="pc-birthdate">—</strong></div>
+                        <div class="pc-field"><span>Gender</span><strong id="pc-gender">—</strong></div>
+                        <div class="pc-field"><span>Nationality</span><strong id="pc-nationality">—</strong></div>
+                        <div class="pc-field"><span>Document no.</span><strong id="pc-serial">—</strong></div>
+                    </div>
+                </div>
+                <div class="pc-footer">
+                    <span id="pc-type">Identification Card</span>
+                    <span class="pc-presented">presented by <strong id="pc-presenter">—</strong></span>
+                </div>
+            </div>
+            <button class="btn btn-outline card-close" id="btn-card-close">Close</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
