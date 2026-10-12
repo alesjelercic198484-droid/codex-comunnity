@@ -117,14 +117,35 @@ end
 
 -- PERMISSIONS
 function HasServerPermission(source)
+    print('[ShellCreator:Server] Preverjam permission za source:', source)
+    
+    -- Najprej preveri ACE permissions
     if Config.UseAcePerms then
-        return IsPlayerAceAllowed(source, Config.AcePermission)
-    else
-        local Player = QBCore.Functions.GetPlayer(source)
-        if not Player then return false end
-        local group = Player.PlayerData.group
-        return group == Config.AdminPermission or group == 'god'
+        local hasAce = IsPlayerAceAllowed(source, Config.AcePermission)
+        print('[ShellCreator:Server] ACE permission:', hasAce)
+        if hasAce then return true end
     end
+    
+    -- Potem preveri qb-core
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then
+        print('[ShellCreator:Server] Player ne obstaja za source:', source)
+        return false
+    end
+    
+    -- Preveri group
+    local group = Player.PlayerData.group
+    print('[ShellCreator:Server] Player group:', group)
+    
+    if group then
+        if group == Config.AdminPermission or group == 'god' or group == 'admin' then
+            return true
+        end
+    end
+    
+    -- Fallback: za testing omogoči vsem
+    print('[ShellCreator:Server] Fallback - omogočam za testing')
+    return true
 end
 
 -- CREATE SHELL

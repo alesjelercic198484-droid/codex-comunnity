@@ -2,7 +2,7 @@ Config = {}
 
 -- PERMISSIONS
 Config.AdminPermission = 'admin'
-Config.UseAcePerms = true
+Config.UseAcePerms = false  -- Nastavi na false za qb-core group permissions
 Config.AcePermission = 'shellcreator.admin'
 
 -- SHELL SLOTS (locations where shells exist in world)
