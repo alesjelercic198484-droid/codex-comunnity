@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shell Creator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="shell-creator-app" style="display: none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🏗️ Shell Creator</h1>
+                <span class="version">v1.0.0</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-tab="shells"><span class="nav-icon">🏠</span><span>Shells</span></button>
+                <button class="nav-btn" data-tab="props"><span class="nav-icon">📦</span><span>Props</span></button>
+                <button class="nav-btn" data-tab="colors"><span class="nav-icon">🎨</span><span>Colors</span></button>
+                <button class="nav-btn" data-tab="floors"><span class="nav-icon">📐</span><span>Floors</span></button>
+                <button class="nav-btn" data-tab="teleporters"><span class="nav-icon">🚪</span><span>Teleporters</span></button>
+                <button class="nav-btn" data-tab="export"><span class="nav-icon">📋</span><span>Export</span></button>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="btn-save" class="btn btn-primary btn-full">💾 Save Shell</button>
+                <button id="btn-close" class="btn btn-secondary btn-full">✕ Close</button>
+            </div>
+        </div>
+        <div class="main-content">
+            <!-- Shells Tab -->
+            <div class="tab-content active" id="tab-shells">
+                <div class="tab-header">
+                    <h2>Shell Management</h2>
+                    <button id="btn-new-shell" class="btn btn-primary">+ New Shell</button>
+                </div>
+                <div id="new-shell-form" class="card" style="display: none;">
+                    <h3>Create New Shell</h3>
+                    <div class="form-group">
+                        <label>Shell Name</label>
+                        <input type="text" id="shell-name" placeholder="My Custom Shell" />
+                    </div>
+                    <div class="form-group">
+                        <label>Template</label>
+                        <select id="shell-template"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Slot</label>
+                        <select id="shell-slot"></select>
+                    </div>
+                    <div class="form-actions">
+                        <button id="btn-create-shell" class="btn btn-primary">Create</button>
+                        <button id="btn-cancel-create" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+                <div class="shell-list" id="shell-list"></div>
+            </div>
+            <!-- Props Tab -->
+            <div class="tab-content" id="tab-props">
+                <div class="tab-header"><h2>Prop Library</h2></div>
+                <div class="search-bar"><input type="text" id="prop-search" placeholder="Search props..." /></div>
+                <div class="category-list" id="category-list"></div>
+                <div class="props-grid" id="props-grid"></div>
+            </div>
+            <!-- Colors Tab -->
+            <div class="tab-content" id="tab-colors">
+                <div class="tab-header"><h2>Color Palette</h2></div>
+                <div class="color-section">
+                    <h3>Wall Color</h3>
+                    <div class="color-grid" id="wall-colors"></div>
+                </div>
+                <div class="color-section">
+                    <h3>Floor Color</h3>
+                    <div class="color-grid" id="floor-colors"></div>
+                </div>
+            </div>
+            <!-- Floors Tab -->
+            <div class="tab-content" id="tab-floors">
+                <div class="tab-header">
+                    <h2>Floor Management</h2>
+                    <button id="btn-add-floor" class="btn btn-primary">+ Add Floor</button>
+                </div>
+                <div class="floor-controls">
+                    <div class="form-group">
+                        <label>Current Floor</label>
+                        <div class="floor-selector">
+                            <button id="btn-floor-down" class="btn btn-icon">▼</button>
+                            <span id="current-floor">1</span>
+                            <button id="btn-floor-up" class="btn btn-icon">▲</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="floor-info">
+                    <p>Maximum floors: <span id="max-floors">5</span></p>
+                    <p>Current floors: <span id="current-floor-count">1</span></p>
+                </div>
+            </div>
+            <!-- Teleporters Tab -->
+            <div class="tab-content" id="tab-teleporters">
+                <div class="tab-header">
+                    <h2>Teleporters</h2>
+                    <button id="btn-create-teleporter" class="btn btn-primary">+ Create Teleporter</button>
+                </div>
+                <div class="teleporter-list" id="teleporter-list">
+                    <p class="info-text">Create teleporters at your current position to allow players to enter shells.</p>
+                </div>
+            </div>
+            <!-- Export Tab -->
+            <div class="tab-content" id="tab-export">
+                <div class="tab-header"><h2>Export Configuration</h2></div>
+                <div class="form-group">
+                    <label>Housing System</label>
+                    <select id="export-housing-type">
+                        <option value="ps-housing">PS-Housing</option>
+                        <option value="qs-housing">QS-Housing</option>
+                        <option value="nolag_properties">NoLag Properties</option>
+                        <option value="esx_property">ESX Property</option>
+                        <option value="loaf-housing">Loaf Housing</option>
+                    </select>
+                </div>
+                <button id="btn-export" class="btn btn-primary">Generate Config</button>
+                <div class="export-output">
+                    <textarea id="export-code" readonly placeholder="Click 'Generate Config'..."></textarea>
+                    <button id="btn-copy-export" class="btn btn-secondary">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
