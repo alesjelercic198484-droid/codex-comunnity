@@ -1,0 +1,24 @@
+# codex_policecreator -------------------------------------------------------
+
+# dependencies
+ensure oxmysql
+
+# your framework (either one)
+ensure qb-core
+# ensure es_extended
+
+# optional but recommended
+ensure ox_inventory
+
+# the resource itself - must start AFTER the framework
+ensure codex_policecreator
+
+# Who may create departments and place nodes.
+# Give this ACE to your admin group, or leave Config.CreatorJobs in config.lua.
+add_ace group.admin codex_policecreator.creator allow
+add_ace group.admin codex_policecreator.admin allow
+
+# Admin only console commands:
+#   deptlist    - list every department with member count and funds
+#   deptsync    - force every connected client to re-read nodes/blips
+#   paysalary   - pay all salaries immediately

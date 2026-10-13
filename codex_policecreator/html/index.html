@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Department Terminal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="hidden">
+    <div class="terminal">
+      <header class="topbar">
+        <div class="brand">
+          <span class="badge" id="deptBadge">PD</span>
+          <div>
+            <h1 id="deptLabel">Department Terminal</h1>
+            <p id="deptSub">Officer</p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="stat"><span>Funds</span><strong id="statFunds">$0</strong></div>
+          <div class="stat"><span>Members</span><strong id="statMembers">0</strong></div>
+          <div class="stat"><span>Open calls</span><strong id="statCalls">0</strong></div>
+          <button class="btn ghost" id="dutyBtn">Go on duty</button>
+          <button class="btn ghost" id="refreshBtn">Refresh</button>
+          <button class="btn danger" id="closeBtn">Close</button>
+        </div>
+      </header>
+
+      <div class="body">
+        <nav class="sidebar" id="sidebar"></nav>
+        <main class="content" id="content"></main>
+      </div>
+
+      <footer class="statusbar">
+        <span id="statusText">Ready</span>
+        <span class="muted">codex_policecreator</span>
+      </footer>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
