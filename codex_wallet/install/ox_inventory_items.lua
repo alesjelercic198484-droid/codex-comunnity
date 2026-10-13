@@ -13,3 +13,16 @@
         image = 'wallet.png'
     }
 },
+
+-- OPTIONAL: cash item used by the wallet's inventory money mode
+-- (Config.Money.Mode = 'item', the default).
+-- Only add this if your server does not already have a cash item -
+-- if your money item is called differently, change Config.Money.ItemName.
+
+['cash'] = {
+    label = 'Cash',
+    weight = 0,
+    stack = true,
+    close = true,
+    description = 'Some hard-earned cash.'
+},

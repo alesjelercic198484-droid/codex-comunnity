@@ -15,8 +15,10 @@ for **qb-core** with a CodeX look.
 ### 💼 Intelligent wallet management
 - Usable `codex_wallet` item (plus `/wallet` command and a rebindable keybind,
   default **F7**) opens a premium **CodeX Wallet** NUI.
-- **Cash**: deposit / withdraw between your pocket (QBCore `cash` account) and
-  the wallet. Money is conserved — nothing is created or destroyed.
+- **Cash**: moves between your **inventory** and the wallet — "To wallet" takes
+  cash items out of the inventory, "To inventory" puts them back. Nothing is
+  created or destroyed. (Classic QBCore money-account mode is also supported,
+  see *Money modes* below.)
 - **Documents**: store ID cards, driver licences, weapon licences and any
   custom whitelisted item inside the wallet and take them out again.
 - **Show ID**: present any stored document to all nearby players (read-only
@@ -123,18 +125,45 @@ The webhook can also be set in `config.lua` (`Config.Logging.Webhook`).
 | Action | How |
 |---|---|
 | Open wallet | Use the **CodeX Wallet** item, type `/wallet`, or press **F7** |
-| Deposit / withdraw cash | Enter an amount (or use the `$100/$500/$1,000/MAX` chips) and press Deposit / Withdraw |
+| Cash into wallet | Enter an amount (or leave empty for max) and press **To wallet ▸** |
+| Cash into inventory | Enter an amount (or leave empty for max) and press **◂ To inventory** |
 | Store a document | Press **Store** next to an item in the *Store from inventory* list |
 | Show a document | Press **Show ID** on a card inside the wallet — every nearby player sees it |
 | Remove a document | Press **Remove** on a card — it returns to the inventory |
 | Test kit (admins) | `/wallettest` — gives a wallet, sample ID cards and $5,000 cash |
 
+## Money modes
+
+Configured in `Config.Money`:
+
+| Mode | Behaviour |
+|---|---|
+| `'item'` *(default)* | Cash is an **inventory item**. "To wallet" removes cash items from the inventory into the wallet; "To inventory" gives cash items back. Multiple stacks are merged/drained correctly. |
+| `'account'` | Classic QBCore behaviour: cash moves between the `cash` **money account** and the wallet. |
+
+Item-mode settings:
+
+```lua
+Config.Money = {
+    Mode = 'item',          -- 'item' or 'account'
+    ItemName = 'cash',      -- your money item (e.g. 'cash', 'money', 'black_money')
+    ItemLabel = 'Cash',
+    ...
+}
+```
+
+If your server does not have a money item yet, paste the optional `cash`
+example from `install/qb_items.lua` into your items file. If your money item
+is called differently, just change `Config.Money.ItemName` — no other edits
+are needed.
+
 ## Testing (bug-check suite)
 
 The resource ships with a full mock-based test suite that executes the real
-`server/main.lua` and `client/main.lua` and asserts money conservation,
-whitelist enforcement, wallet-in-wallet prevention, presentation radius,
-rate limiting, logging, persistence and the client shell. **99 assertions.**
+`server/main.lua` and `client/main.lua` and asserts money conservation
+(both money modes), multi-stack cash handling, whitelist enforcement,
+wallet-in-wallet prevention, presentation radius, rate limiting, logging,
+persistence and the client shell. **114 assertions.**
 
 ```bash
 pip install lupa

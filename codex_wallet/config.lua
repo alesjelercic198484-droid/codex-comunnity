@@ -48,7 +48,20 @@ Config.Wallet = {
 Config.Money = {
     Enabled = true,
 
-    -- QBCore money account used for deposits / withdrawals.
+    -- 'item'    : cash is an INVENTORY ITEM. "Deposit" moves cash items from
+    --              the inventory into the wallet, "Withdraw" gives cash items
+    --              back into the inventory.
+    -- 'account' : classic behaviour - cash moves between the QBCore money
+    --              account and the wallet.
+    Mode = 'item',
+
+    -- Inventory item used as cash when Mode = 'item'.
+    -- Register it in your inventory if it does not exist yet
+    -- (an optional example is included in install/qb_items.lua).
+    ItemName = 'cash',
+    ItemLabel = 'Cash',
+
+    -- QBCore money account used when Mode = 'account'.
     Account = 'cash',
 
     -- Minimum deposit / withdraw per operation.

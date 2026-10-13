@@ -283,16 +283,18 @@ local function RemoveItem(src, name, slot, count)
     return ok
 end
 
---- Add one unit of `name` with metadata to the player inventory.
-local function AddItem(src, name, metadata)
+--- Add `count` units of `name` with metadata to the player inventory.
+local function AddItem(src, name, metadata, count)
     local player = GetPlayer(src)
     if not player then
         return false, 'no_player'
     end
 
+    count = math.max(1, math.floor(tonumber(count) or 1))
+
     if InventoryType() == 'ox' then
         local ok, success = pcall(function()
-            return exports.ox_inventory:AddItem(src, name, 1, metadata)
+            return exports.ox_inventory:AddItem(src, name, count, metadata)
         end)
 
         if ok and success == true then
@@ -303,7 +305,7 @@ local function AddItem(src, name, metadata)
     end
 
     local ok, success = pcall(function()
-        return player.Functions.AddItem(name, 1, false, metadata)
+        return player.Functions.AddItem(name, count, false, metadata)
     end)
 
     if not ok then
@@ -317,6 +319,69 @@ local function AddItem(src, name, metadata)
     ItemBox(src, name, 'add')
 
     return true
+end
+
+--- Remove `amount` units of `name` across all inventory stacks.
+local function RemoveItemAmount(src, name, amount)
+    amount = math.floor(tonumber(amount) or 0)
+    if amount <= 0 then
+        return false
+    end
+
+    local player = GetPlayer(src)
+    if not player then
+        return false
+    end
+
+    if CountInventoryItems(src, name) < amount then
+        return false
+    end
+
+    if InventoryType() == 'ox' then
+        local ok, success = pcall(function()
+            return exports.ox_inventory:RemoveItem(src, name, amount)
+        end)
+        return ok and success == true
+    end
+
+    -- qb-inventory: subtract the amount across stacks (lowest slots first).
+    local items = (player.PlayerData and player.PlayerData.items) or {}
+    local targets = {}
+
+    for slot, item in pairs(items) do
+        if item and item.name == name then
+            targets[#targets + 1] = {
+                slot = item.slot or slot,
+                have = tonumber(item.amount) or tonumber(item.count) or 1
+            }
+        end
+    end
+
+    table.sort(targets, function(a, b)
+        return a.slot < b.slot
+    end)
+
+    local remaining = amount
+    for _, target in ipairs(targets) do
+        if remaining <= 0 then
+            break
+        end
+
+        local take = math.min(target.have, remaining)
+        local ok, success = pcall(function()
+            return player.Functions.RemoveItem(name, take, target.slot)
+        end)
+
+        if not ok or success == false then
+            return false
+        end
+
+        remaining = remaining - take
+    end
+
+    ItemBox(src, name, 'remove')
+
+    return remaining <= 0
 end
 
 --- Snapshot of storeable items the player currently carries.
@@ -375,7 +440,24 @@ local function GetStoreableItems(src)
 end
 
 -- money -------------------------------------------------------------------------
+-- Two modes:
+--   'item'    - cash is an inventory item: wallet deposits take cash items
+--               out of the inventory, withdrawals put cash items back.
+--   'account' - classic QBCore money account.
+local function MoneyMode()
+    return string.lower(tostring((Config.Money and Config.Money.Mode) or 'item'))
+end
+
+local function CashItemName()
+    return (Config.Money and Config.Money.ItemName) or 'cash'
+end
+
+--- Money the player currently holds outside the wallet (deposit source).
 local function GetCash(src)
+    if MoneyMode() == 'item' then
+        return CountInventoryItems(src, CashItemName())
+    end
+
     local player = GetPlayer(src)
     if not player then
         return 0
@@ -389,7 +471,17 @@ local function GetCash(src)
     return ok and (tonumber(amount) or 0) or 0
 end
 
+--- Take money from the player (used by deposits into the wallet).
 local function RemoveCash(src, amount)
+    amount = math.floor(tonumber(amount) or 0)
+    if amount <= 0 then
+        return false
+    end
+
+    if MoneyMode() == 'item' then
+        return RemoveItemAmount(src, CashItemName(), amount)
+    end
+
     local player = GetPlayer(src)
     if not player then
         return false
@@ -403,7 +495,17 @@ local function RemoveCash(src, amount)
     return ok and success ~= false
 end
 
+--- Give money to the player (used by withdrawals from the wallet).
 local function AddCash(src, amount)
+    amount = math.floor(tonumber(amount) or 0)
+    if amount <= 0 then
+        return false
+    end
+
+    if MoneyMode() == 'item' then
+        return (AddItem(src, CashItemName(), nil, amount))
+    end
+
     local player = GetPlayer(src)
     if not player then
         return false
@@ -539,7 +641,10 @@ local function OpenWallet(src, serial)
             minAmount = Config.Money.MinAmount,
             maxAmount = Config.Money.MaxAmount,
             maxBalance = Config.Money.MaxBalance,
-            moneyEnabled = Config.Money.Enabled == true
+            moneyEnabled = Config.Money.Enabled == true,
+            moneyMode = MoneyMode(),
+            cashItemLabel = Config.Money.ItemLabel or 'Cash',
+            inventoryCash = GetCash(src)
         }
     })
 

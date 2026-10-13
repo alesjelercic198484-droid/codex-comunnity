@@ -15,3 +15,22 @@
     combinable = nil,
     description = 'A premium leather wallet branded CodeX Wallet. Store your ID cards and cash safely inside.'
 },
+
+-- OPTIONAL: cash item used by the wallet's inventory money mode
+-- (Config.Money.Mode = 'item', the default).
+-- Only add this if your server does not already have a cash item -
+-- if your money item is called differently (e.g. 'money'), just change
+-- Config.Money.ItemName in the wallet config instead.
+
+['cash'] = {
+    name = 'cash',
+    label = 'Cash',
+    weight = 0,
+    type = 'item',
+    image = 'cash.png',
+    unique = false,
+    useable = true,
+    shouldClose = true,
+    combinable = nil,
+    description = 'Some hard-earned cash.'
+},

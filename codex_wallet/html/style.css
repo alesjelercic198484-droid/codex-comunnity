@@ -431,6 +431,48 @@ body {
     color: var(--muted);
 }
 
+/* Cash split (inventory <-> wallet) */
+.cash-split {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.cash-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 14px;
+    background: rgba(13, 11, 9, 0.45);
+    border: 1px solid rgba(243, 234, 216, 0.09);
+    border-radius: var(--radius-sm);
+}
+
+.cash-box-value {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--cream);
+}
+
+.cash-box-value.gold {
+    background: linear-gradient(100deg, var(--gold-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.cash-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    color: var(--gold);
+    opacity: 0.85;
+}
+
 /* Buttons ---------------------------------------------------------------- */
 .btn {
     font-family: var(--font);

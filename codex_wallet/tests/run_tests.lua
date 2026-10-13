@@ -95,6 +95,19 @@ local function makeWalletPlayer(id, options)
     })
 end
 
+--- Give inventory cash items (item money mode).
+local function giveCash(src, amount)
+    return Mock.players[src].Functions.AddItem(Config.Money.ItemName, amount, false, nil)
+end
+
+--- Cash the player holds OUTSIDE the wallet (inventory items or account).
+local function playerMoney(src)
+    if Config.Money.Mode == 'item' then
+        return Mock.countItems(src, Config.Money.ItemName)
+    end
+    return Mock.players[src].PlayerData.money.cash or 0
+end
+
 local function dbWallet(serial)
     local row = Mock.db[serial]
     if not row then
@@ -110,10 +123,8 @@ local function dbWallet(serial)
 end
 
 local function totalMoney(src, serial)
-    local player = Mock.players[src]
-    local cash = player.PlayerData.money.cash or 0
     local row = dbWallet(serial)
-    return cash + (row and row.cash or 0)
+    return playerMoney(src) + (row and row.cash or 0)
 end
 
 -- ---------------------------------------------------------------------------
@@ -167,21 +178,41 @@ assertEqual(event.args[1].wallet.serial, assigned, 'payload uses the assigned se
 assertTrue(dbWallet(assigned) ~= nil, 'wallet row created in database')
 
 -- ---------------------------------------------------------------------------
-section('3. Cash: deposit / withdraw / conservation')
+section('3. Cash: inventory <-> wallet (item mode)')
 -- ---------------------------------------------------------------------------
+assertEqual(Config.Money.Mode, 'item', 'default money mode is inventory items')
+
+makeWalletPlayer(1, {})
+giveCash(1, 5000)
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 5000, 'player starts with cash items in inventory')
+
 Mock.resetTraces()
 local serial = walletSerial(1)
 
 act(1, 'deposit', { amount = 1000 })
-assertEqual(Mock.players[1].PlayerData.money.cash, 4000, 'cash taken from player on deposit')
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 4000, 'cash items taken from inventory on deposit')
 assertEqual(dbWallet(serial).cash, 1000, 'cash added to wallet on deposit')
 assertEqual(totalMoney(1, serial), 5000, 'total money conserved after deposit')
 assertEqual(lastNotification().message, 'You deposited $1,000 into your wallet.', 'deposit notification formatted')
 
 act(1, 'withdraw', { amount = 400 })
-assertEqual(Mock.players[1].PlayerData.money.cash, 4400, 'cash paid out on withdraw')
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 4400, 'cash items returned to inventory on withdraw')
 assertEqual(dbWallet(serial).cash, 600, 'cash removed from wallet on withdraw')
 assertEqual(totalMoney(1, serial), 5000, 'total money conserved after withdraw')
+
+-- deposit across multiple stacks
+Mock.players[1].Functions.AddItem(Config.Money.ItemName, 300, false, nil) -- second stack
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 4700, 'second cash stack added')
+
+act(1, 'deposit', { amount = 4000 })
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 700, 'deposit drained across multiple cash stacks')
+assertEqual(dbWallet(serial).cash, 4600, 'wallet received the multi-stack deposit')
+
+-- withdraw everything possible with one action
+act(1, 'withdraw', { amount = 4600 })
+assertEqual(dbWallet(serial).cash, 0, 'wallet emptied on full withdraw')
+assertEqual(Mock.countItems(1, Config.Money.ItemName), 5300, 'all withdrawn cash back in inventory')
+assertEqual(totalMoney(1, serial), 5300, 'total money conserved across multi-stack flow')
 
 -- invalid amounts -----------------------------------------------------------
 local before = totalMoney(1, serial)
@@ -388,7 +419,8 @@ Mock.giveItem(1, 'codex_wallet', { serial = serial })
 -- ---------------------------------------------------------------------------
 section('8. Rate limiting')
 -- ---------------------------------------------------------------------------
-makeWalletPlayer(7, { cash = 1000 })
+makeWalletPlayer(7, {})
+giveCash(7, 1000)
 Mock.resetTraces()
 
 -- two actions with no time in between
@@ -440,7 +472,7 @@ assertEqual(Mock.countItems(8, 'codex_wallet'), 1, 'test kit gives a wallet')
 assertEqual(Mock.countItems(8, 'id_card'), 1, 'test kit gives an ID card')
 assertEqual(Mock.countItems(8, 'driver_license'), 1, 'test kit gives a driver licence')
 assertEqual(Mock.countItems(8, 'weaponlicense'), 1, 'test kit gives a weapon licence')
-assertEqual(Mock.players[8].PlayerData.money.cash, 5000, 'test kit gives $5,000 cash')
+assertEqual(Mock.countItems(8, Config.Money.ItemName), 5000, 'test kit gives $5,000 cash as inventory items')
 
 -- non-admin cannot use it
 Mock.makePlayer(9, { items = {}, cash = 0 })
@@ -472,9 +504,9 @@ Storage.SetDatabaseMode(false)
 Storage.ResetMemory()
 
 makeWalletPlayer(10, {
-    items = { [1] = { name = 'codex_wallet', amount = 1, slot = 1, info = { serial = 'CXW-MEM1' } } },
-    cash = 500
+    items = { [1] = { name = 'codex_wallet', amount = 1, slot = 1, info = { serial = 'CXW-MEM1' } } }
 })
+giveCash(10, 500)
 
 act(10, 'deposit', { amount = 200 })
 local memWallet = Storage.Load('CXW-MEM1')
@@ -483,9 +515,34 @@ assertEqual(memWallet.cash, 200, 'memory fallback stores wallet cash')
 act(10, 'withdraw', { amount = 50 })
 memWallet = Storage.Load('CXW-MEM1')
 assertEqual(memWallet.cash, 150, 'memory fallback updates wallet cash')
-assertEqual(Mock.players[10].PlayerData.money.cash, 350, 'player cash consistent in memory mode')
+assertEqual(Mock.countItems(10, Config.Money.ItemName), 350, 'player inventory cash consistent in memory mode')
 
 Storage.SetDatabaseMode(true)
+
+-- ---------------------------------------------------------------------------
+section('11b. Account money mode (classic, still supported)')
+-- ---------------------------------------------------------------------------
+Config.Money.Mode = 'account'
+
+makeWalletPlayer(11, { cash = 3000 })
+Mock.resetTraces()
+
+local serial11 = walletSerial(11)
+
+act(11, 'deposit', { amount = 1200 })
+assertEqual(Mock.players[11].PlayerData.money.cash, 1800, 'account mode: cash taken from money account')
+assertEqual(dbWallet(serial11).cash, 1200, 'account mode: cash added to wallet')
+assertEqual(totalMoney(11, serial11), 3000, 'account mode: total money conserved')
+
+act(11, 'withdraw', { amount = 700 })
+assertEqual(Mock.players[11].PlayerData.money.cash, 2500, 'account mode: cash paid to money account')
+assertEqual(dbWallet(serial11).cash, 500, 'account mode: cash removed from wallet')
+assertEqual(totalMoney(11, serial11), 3000, 'account mode: total money conserved after withdraw')
+
+act(11, 'withdraw', { amount = 5000 })
+assertEqual(dbWallet(serial11).cash, 500, 'account mode: overdraw rejected')
+
+Config.Money.Mode = 'item'
 
 -- ---------------------------------------------------------------------------
 section('12. Client shell')

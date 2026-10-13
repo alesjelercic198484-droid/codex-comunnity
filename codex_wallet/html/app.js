@@ -93,8 +93,41 @@
             document.getElementById('panel-cash').classList.add('hidden');
         }
 
+        renderCash(limits, wallet);
         renderCards(wallet.items || []);
         renderStore(state.inventory || []);
+    }
+
+    function renderCash(limits, wallet) {
+        const mode = limits.moneyMode === 'account' ? 'account' : 'item';
+        const invCash = Math.floor(Number(limits.inventoryCash) || 0);
+        const walletCash = Math.floor(Number(wallet.cash) || 0);
+
+        document.getElementById('inv-cash').textContent = '$' + formatMoney(invCash);
+        document.getElementById('wallet-cash').textContent = '$' + formatMoney(walletCash);
+
+        const hint = document.getElementById('cash-hint');
+        if (mode === 'item') {
+            hint.textContent =
+                `Cash items (${limits.cashItemLabel || 'Cash'}) move between your inventory and the wallet. Nothing is created or destroyed.`;
+        } else {
+            hint.textContent =
+                'Money moves between your pocket (cash account) and the wallet. Nothing is created or destroyed.';
+        }
+    }
+
+    function maxDeposit(limits, wallet) {
+        const invCash = Math.floor(Number(limits.inventoryCash) || 0);
+        const walletCash = Math.floor(Number(wallet.cash) || 0);
+        const maxAmount = Math.floor(Number(limits.maxAmount) || 0);
+        const maxBalance = Math.floor(Number(limits.maxBalance) || 0);
+        return Math.max(0, Math.min(invCash, maxAmount, maxBalance - walletCash));
+    }
+
+    function maxWithdraw(wallet) {
+        const walletCash = Math.floor(Number(wallet.cash) || 0);
+        const maxAmount = Math.floor(Number(state.limits.maxAmount) || 0);
+        return Math.max(0, Math.min(walletCash, maxAmount));
     }
 
     function renderCards(items) {
@@ -256,12 +289,22 @@
 
     document.getElementById('btn-deposit').addEventListener('click', function () {
         const input = document.getElementById('cash-amount');
-        post('action', { action: 'deposit', data: { amount: input.value } });
+        const value = (input.value || '').trim();
+        // empty amount = deposit everything possible (inventory -> wallet)
+        const amount = value === ''
+            ? maxDeposit(state.limits || {}, state.wallet || {})
+            : value;
+        post('action', { action: 'deposit', data: { amount: amount } });
     });
 
     document.getElementById('btn-withdraw').addEventListener('click', function () {
         const input = document.getElementById('cash-amount');
-        post('action', { action: 'withdraw', data: { amount: input.value } });
+        const value = (input.value || '').trim();
+        // empty amount = withdraw everything possible (wallet -> inventory)
+        const amount = value === ''
+            ? maxWithdraw(state.wallet || {})
+            : value;
+        post('action', { action: 'withdraw', data: { amount: amount } });
     });
 
     document.querySelectorAll('.quick-amount').forEach(function (button) {
@@ -270,7 +313,7 @@
             const amount = button.getAttribute('data-amount');
 
             if (amount === 'all') {
-                input.value = String((state.wallet && state.wallet.cash) || 0);
+                input.value = String(maxDeposit(state.limits || {}, state.wallet || {}));
             } else {
                 input.value = amount;
             }

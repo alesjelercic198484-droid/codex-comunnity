@@ -61,15 +61,26 @@
                             <button class="chip quick-amount" data-amount="all">MAX</button>
                         </div>
                     </div>
+                    <div class="cash-split">
+                        <div class="cash-box">
+                            <span class="hero-label">In inventory</span>
+                            <strong class="cash-box-value" id="inv-cash">$0</strong>
+                        </div>
+                        <div class="cash-arrow">⇄</div>
+                        <div class="cash-box">
+                            <span class="hero-label">In wallet</span>
+                            <strong class="cash-box-value gold" id="wallet-cash">$0</strong>
+                        </div>
+                    </div>
                     <div class="cash-controls">
                         <div class="amount-wrap">
                             <span class="amount-prefix">$</span>
                             <input type="number" id="cash-amount" min="1" step="1" placeholder="Amount">
                         </div>
-                        <button class="btn btn-gold" id="btn-deposit">Deposit</button>
-                        <button class="btn btn-outline" id="btn-withdraw">Withdraw</button>
+                        <button class="btn btn-gold" id="btn-deposit">To wallet ▸</button>
+                        <button class="btn btn-outline" id="btn-withdraw">◂ To inventory</button>
                     </div>
-                    <p class="hint" id="cash-hint">Money moves between your pocket (cash) and the wallet. Nothing is created or destroyed.</p>
+                    <p class="hint" id="cash-hint">Cash items move between your inventory and the wallet. Nothing is created or destroyed.</p>
                 </section>
 
                 <!-- Cards inside wallet -->
