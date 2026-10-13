@@ -16,14 +16,24 @@ for **qb-core** with a CodeX look.
 - Usable `codex_wallet` item (plus `/wallet` command and a rebindable keybind,
   default **F7**) opens a premium **CodeX Wallet** NUI.
 - **Cash**: moves between your **inventory** and the wallet — "To wallet" takes
-  cash items out of the inventory, "To inventory" puts them back. Nothing is
-  created or destroyed. (Classic QBCore money-account mode is also supported,
-  see *Money modes* below.)
-- **Documents**: store ID cards, driver licences, weapon licences and any
-  custom whitelisted item inside the wallet and take them out again.
+  cash items out of the inventory, "To inventory" puts them back. The wallet is
+  **never linked to a bank or money account** — only what physically sits in
+  your inventory can go inside.
+- **Documents**: store ID cards, driver licences, weapon licences, bank cards,
+  police badges, credit cards and any custom whitelisted item inside the wallet
+  and take them out again.
 - **Show ID**: present any stored document to all nearby players (read-only
   popup with name, DOB, gender, nationality and document number).
 - Configurable **slots** (default 8) and **weight** capacity (default 2 kg).
+
+### 🛠️ WAdmin panel (in-game whitelist management)
+- Admin command `/walletadmin` opens the **WAdmin** NUI.
+- Add any new item by its **spawn code** (e.g. `creditcard`) — label, weight
+  and "presentable" toggle — and it can immediately be stored in every wallet.
+- Enable / disable / remove entries at runtime; changes persist in the
+  `codex_wallet_whitelist` table and survive restarts.
+- Quick-add chips for common items (`creditcard`, `bank_card`, `police_badge`...).
+- Permission: QBCore admin/god or ACE `codexwallet.admin`.
 
 ### 🔒 Advanced security (server-authoritative)
 - **Item whitelist** — only configured documents can be stored
@@ -130,22 +140,17 @@ The webhook can also be set in `config.lua` (`Config.Logging.Webhook`).
 | Store a document | Press **Store** next to an item in the *Store from inventory* list |
 | Show a document | Press **Show ID** on a card inside the wallet — every nearby player sees it |
 | Remove a document | Press **Remove** on a card — it returns to the inventory |
-| Test kit (admins) | `/wallettest` — gives a wallet, sample ID cards and $5,000 cash |
+| Manage whitelist (admins) | `/walletadmin` — add items by spawn code, enable/disable/remove |
+| Test kit (admins) | `/wallettest` — gives a wallet, sample ID cards, bank card and $5,000 cash |
 
-## Money modes
+## Money (inventory only — no bank!)
 
-Configured in `Config.Money`:
-
-| Mode | Behaviour |
-|---|---|
-| `'item'` *(default)* | Cash is an **inventory item**. "To wallet" removes cash items from the inventory into the wallet; "To inventory" gives cash items back. Multiple stacks are merged/drained correctly. |
-| `'account'` | Classic QBCore behaviour: cash moves between the `cash` **money account** and the wallet. |
-
-Item-mode settings:
+The wallet is **strictly inventory-based**: cash is an inventory item and only
+ever moves inventory ⇄ wallet. The bank, money accounts and society funds are
+never touched.
 
 ```lua
 Config.Money = {
-    Mode = 'item',          -- 'item' or 'account'
     ItemName = 'cash',      -- your money item (e.g. 'cash', 'money', 'black_money')
     ItemLabel = 'Cash',
     ...
@@ -161,9 +166,10 @@ are needed.
 
 The resource ships with a full mock-based test suite that executes the real
 `server/main.lua` and `client/main.lua` and asserts money conservation
-(both money modes), multi-stack cash handling, whitelist enforcement,
-wallet-in-wallet prevention, presentation radius, rate limiting, logging,
-persistence and the client shell. **114 assertions.**
+(inventory-only, multi-stack cash), whitelist enforcement, WAdmin spawn-code
+management (add/toggle/remove), wallet-in-wallet prevention, presentation
+radius, rate limiting, logging, persistence and the client shell.
+**135 assertions.**
 
 ```bash
 pip install lupa
@@ -182,18 +188,23 @@ In-game testing:
 
 ## Item whitelist (documents)
 
-Configured in `Config.AllowedItems` — add your own documents easily:
+Managed at runtime in the **WAdmin panel** (`/walletadmin`) and seeded from
+`Config.AllowedItems` — defaults include `id_card`, `driver_license`,
+`weaponlicense`, `government_id`, `dos_id_card`, `police_badge`, `bank_card`
+and `creditcard`.
 
-```lua
-['police_badge'] = {
-    label = 'Police Badge',
-    weight = 50,
-    presentable = true   -- can be shown to nearby players
-},
-```
+Adding a brand new item in WAdmin is one field — its spawn code:
+
+| Field | Meaning |
+|---|---|
+| Spawn code | inventory item name, e.g. `creditcard` |
+| Label | display name in the wallet |
+| Weight (g) | counted against the wallet weight cap |
+| Presentable | can the owner show it to nearby players |
 
 `presentable = false` items can be stored but never shown to others. The
-wallet item itself is never allowed inside a wallet.
+wallet item itself is never allowed inside a wallet. Removing a config-default
+entry in WAdmin disables it (the config seed stays intact).
 
 ## Data model
 
@@ -217,6 +228,11 @@ exports['codex_wallet']:OpenWallet(source)        -- open a player's wallet
 exports['codex_wallet']:GetWalletData(serial)     -- read wallet contents
 exports['codex_wallet']:GiveTestKit(source)       -- issue the admin test kit
 ```
+
+| Table | Meaning |
+|---|---|
+| `codex_wallets` | wallet contents (cash + documents) keyed by serial |
+| `codex_wallet_whitelist` | items allowed in the wallet (WAdmin-managed) |
 
 ## License
 

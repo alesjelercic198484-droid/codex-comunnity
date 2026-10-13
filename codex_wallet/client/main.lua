@@ -10,6 +10,7 @@ local RESOURCE = GetCurrentResourceName()
 local QBCore = nil
 local uiOpen = false
 local presentedOpen = false
+local adminOpen = false
 
 local function TryGetCore()
     if QBCore then
@@ -58,6 +59,16 @@ local function CloseUI()
     TriggerServerEvent(RESOURCE .. ':closeWallet')
 end
 
+local function CloseAdmin()
+    if not adminOpen then
+        return
+    end
+
+    adminOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeAdmin' })
+end
+
 local function ClosePresented()
     if not presentedOpen then
         return
@@ -82,6 +93,15 @@ RegisterNetEvent(RESOURCE .. ':notify', function(message, kind)
 end)
 
 -- presented ID card ---------------------------------------------------------------
+RegisterNetEvent(RESOURCE .. ':openAdmin', function(payload)
+    adminOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'openAdmin',
+        payload = payload
+    })
+end)
+
 RegisterNetEvent(RESOURCE .. ':presentCard', function(card, autoCloseMs, presenterName)
     presentedOpen = true
 
@@ -124,6 +144,21 @@ RegisterNUICallback('notify', function(data, cb)
     cb({ ok = true })
 end)
 
+RegisterNUICallback('adminAction', function(data, cb)
+    if type(data) ~= 'table' or type(data.action) ~= 'string' then
+        cb({ ok = false })
+        return
+    end
+
+    TriggerServerEvent(RESOURCE .. ':adminAction', data.action, data.data or {})
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('closeAdmin', function(_, cb)
+    CloseAdmin()
+    cb({ ok = true })
+end)
+
 -- controls -----------------------------------------------------------------------
 CreateThread(function()
     while not TryGetCore() do
@@ -161,6 +196,10 @@ CreateThread(function()
             if IsControlJustPressed(0, 200) or IsControlJustPressed(0, 177) then -- ESC / Backspace
                 CloseUI()
             end
+        elseif adminOpen then
+            if IsControlJustPressed(0, 200) or IsControlJustPressed(0, 177) then
+                CloseAdmin()
+            end
         else
             Wait(250)
         end
@@ -172,7 +211,7 @@ AddEventHandler('onResourceStop', function(resource)
         return
     end
 
-    if uiOpen then
+    if uiOpen or adminOpen then
         SetNuiFocus(false, false)
     end
 end)

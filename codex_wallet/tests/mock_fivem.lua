@@ -223,6 +223,7 @@ Mock.keyMappings = {}
 Mock.httpRequests = {}
 Mock.exports = {}
 Mock.db = {}
+Mock.whitelistDb = {}
 Mock.players = {}
 Mock.playerOrder = {}
 Mock.permissions = {}
@@ -525,7 +526,7 @@ function Mock.resetTraces()
 end
 
 -- ---------------------------------------------------------------------------
--- oxmysql mock
+-- oxmysql mock (routes by the SQL text: wallets table vs whitelist table)
 -- ---------------------------------------------------------------------------
 local function decodeItemsField(raw)
     if type(raw) == 'table' then
@@ -541,15 +542,55 @@ local function decodeItemsField(raw)
     return {}
 end
 
+local function isWhitelistSql(sql)
+    return type(sql) == 'string' and sql:find('codex_wallet_whitelist', 1, true) ~= nil
+end
+
+local function toBool(value)
+    return value == true or tonumber(value) == 1
+end
+
 MySQL = {
     query = {
-        await = function(sql)
-            -- CREATE TABLE etc. is a no-op in the mock.
+        await = function(sql, params)
+            -- CREATE TABLE is a no-op; SELECT on the whitelist returns all rows.
+            if isWhitelistSql(sql) and sql:find('SELECT', 1, true) then
+                local rows = {}
+                for _, entry in pairs(Mock.whitelistDb) do
+                    rows[#rows + 1] = {
+                        name = entry.name,
+                        label = entry.label,
+                        weight = entry.weight,
+                        presentable = toBool(entry.presentable) and 1 or 0,
+                        enabled = toBool(entry.enabled) and 1 or 0,
+                        source = entry.source
+                    }
+                end
+                table.sort(rows, function(a, b)
+                    return a.name < b.name
+                end)
+                return rows
+            end
             return {}
         end
     },
     single = {
         await = function(sql, params)
+            if isWhitelistSql(sql) then
+                local entry = params and Mock.whitelistDb[params[1]]
+                if not entry then
+                    return nil
+                end
+                return {
+                    name = entry.name,
+                    label = entry.label,
+                    weight = entry.weight,
+                    presentable = toBool(entry.presentable) and 1 or 0,
+                    enabled = toBool(entry.enabled) and 1 or 0,
+                    source = entry.source
+                }
+            end
+
             local serial = params and params[1]
             local row = Mock.db[serial]
             if not row then
@@ -565,6 +606,19 @@ MySQL = {
     },
     insert = {
         await = function(sql, params)
+            if isWhitelistSql(sql) then
+                -- INSERT ... ON DUPLICATE KEY UPDATE (name, label, weight, presentable, enabled, source)
+                Mock.whitelistDb[params[1]] = {
+                    name = params[1],
+                    label = params[2],
+                    weight = params[3],
+                    presentable = toBool(params[4]),
+                    enabled = toBool(params[5]),
+                    source = params[6]
+                }
+                return 1
+            end
+
             local serial = params[1]
             Mock.db[serial] = {
                 serial = serial,
@@ -577,6 +631,14 @@ MySQL = {
     },
     update = {
         await = function(sql, params)
+            if isWhitelistSql(sql) then
+                if sql:find('DELETE', 1, true) then
+                    Mock.whitelistDb[params[1]] = nil
+                    return 1
+                end
+                return 1
+            end
+
             local serial = params[4]
             local row = Mock.db[serial]
             if not row then

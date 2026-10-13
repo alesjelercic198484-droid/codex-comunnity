@@ -121,6 +121,91 @@
         </div>
     </div>
 
+    <!-- ============================ WADMIN PANEL ============================ -->
+    <div id="admin-app" class="hidden">
+        <div class="wallet-shell admin-shell">
+            <!-- Header -->
+            <header class="wallet-header">
+                <div class="brand">
+                    <div class="brand-mark">CX</div>
+                    <div class="brand-text">
+                        <h1 class="brand-name">CodeX Wallet <span class="admin-badge">WADMIN</span></h1>
+                        <span class="brand-tagline">Wallet whitelist management</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="serial-chip" id="admin-slots-chip">8 slots</div>
+                    <button class="icon-btn" id="btn-admin-close" title="Close (ESC)">✕</button>
+                </div>
+            </header>
+
+            <!-- Settings strip -->
+            <section class="admin-settings" id="admin-settings">
+                <div class="setting-chip">📦 Slots: <strong id="set-slots">—</strong></div>
+                <div class="setting-chip">⚖️ Max weight: <strong id="set-weight">—</strong></div>
+                <div class="setting-chip">💵 Cash item: <strong id="set-cash">—</strong></div>
+                <div class="setting-chip">💰 Max wallet balance: <strong id="set-balance">—</strong></div>
+            </section>
+
+            <main class="wallet-body admin-body">
+                <!-- Add item form -->
+                <section class="panel" id="panel-admin-add">
+                    <div class="panel-head">
+                        <h2>➕ Add item to wallet</h2>
+                    </div>
+                    <div class="admin-form">
+                        <label class="admin-label">Spawn code (item name)</label>
+                        <input type="text" id="admin-name" class="admin-input" placeholder="e.g. creditcard" maxlength="64" spellcheck="false">
+
+                        <label class="admin-label">Label</label>
+                        <input type="text" id="admin-label" class="admin-input" placeholder="e.g. Credit Card" maxlength="128">
+
+                        <div class="admin-row">
+                            <div class="admin-col">
+                                <label class="admin-label">Weight (g)</label>
+                                <input type="number" id="admin-weight" class="admin-input" value="50" min="1" max="10000">
+                            </div>
+                            <div class="admin-col admin-col-check">
+                                <label class="admin-label">Showable to others</label>
+                                <label class="admin-toggle">
+                                    <input type="checkbox" id="admin-presentable">
+                                    <span class="toggle-track"></span>
+                                    <span class="toggle-text">Presentable</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-gold admin-submit" id="btn-admin-add">Add to whitelist</button>
+
+                        <div class="admin-suggest">
+                            <span class="admin-label">Quick add:</span>
+                            <div class="chip-row" id="admin-suggestions"></div>
+                        </div>
+                        <p class="hint">Items added here can immediately be stored in every wallet — inventory ⇄ wallet, nothing else.</p>
+                    </div>
+                </section>
+
+                <!-- Whitelist list -->
+                <section class="panel" id="panel-admin-list">
+                    <div class="panel-head">
+                        <h2>📋 Wallet whitelist</h2>
+                        <input type="text" id="admin-search" class="admin-input admin-search" placeholder="Search spawn code...">
+                    </div>
+                    <div class="admin-list" id="admin-list"></div>
+                    <div class="empty-state small hidden" id="admin-empty">
+                        <p>No items in the whitelist.</p>
+                        <span>Add the first one with its spawn code.</span>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="wallet-footer">
+                <span id="admin-footer-brand">CodeX Community • Premium Roleplay</span>
+                <span class="footer-note">WAdmin • permission-gated • ESC to close</span>
+            </footer>
+        </div>
+    </div>
+
     <!-- ============================ PRESENTED ID CARD ============================ -->
     <div id="card-overlay" class="hidden">
         <div class="card-stage">

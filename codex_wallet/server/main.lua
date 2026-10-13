@@ -384,6 +384,74 @@ local function RemoveItemAmount(src, name, amount)
     return remaining <= 0
 end
 
+-- whitelist (runtime) -------------------------------------------------------------
+-- Merged view of Config.AllowedItems + admin-managed entries from the
+-- `codex_wallet_whitelist` table (managed in the WAdmin panel).
+local runtimeAllowed = {}
+
+local function RebuildRuntimeWhitelist()
+    local merged = {}
+
+    -- config defaults first
+    for name, entry in pairs(Config.AllowedItems or {}) do
+        merged[name] = {
+            name = name,
+            label = entry.label or name,
+            weight = tonumber(entry.weight) or 50,
+            presentable = entry.presentable ~= false,
+            enabled = true,
+            source = 'config'
+        }
+    end
+
+    -- database entries override / extend / disable
+    local ok, rows = pcall(function()
+        return Storage.LoadWhitelist()
+    end)
+
+    if ok and rows then
+        for _, row in ipairs(rows) do
+            merged[row.name] = {
+                name = row.name,
+                label = row.label ~= '' and row.label or row.name,
+                weight = row.weight,
+                presentable = row.presentable,
+                enabled = row.enabled,
+                source = row.source
+            }
+        end
+    end
+
+    runtimeAllowed = merged
+end
+
+--- Allowed item entry (nil when the item may NOT be stored in the wallet).
+local function Allowed(name)
+    local entry = runtimeAllowed[name]
+    if not entry or not entry.enabled then
+        return nil
+    end
+    return entry
+end
+
+local function WhitelistList()
+    local result = {}
+    for _, entry in pairs(runtimeAllowed) do
+        result[#result + 1] = {
+            name = entry.name,
+            label = entry.label,
+            weight = entry.weight,
+            presentable = entry.presentable,
+            enabled = entry.enabled,
+            source = entry.source
+        }
+    end
+    table.sort(result, function(a, b)
+        return a.name < b.name
+    end)
+    return result
+end
+
 --- Snapshot of storeable items the player currently carries.
 local function GetStoreableItems(src)
     local player = GetPlayer(src)
@@ -394,7 +462,7 @@ local function GetStoreableItems(src)
     end
 
     local function push(slot, name, label, description, meta)
-        local allowed = Config.AllowedItems[name]
+        local allowed = Allowed(name)
         if not allowed then
             return
         end
@@ -440,35 +508,15 @@ local function GetStoreableItems(src)
 end
 
 -- money -------------------------------------------------------------------------
--- Two modes:
---   'item'    - cash is an inventory item: wallet deposits take cash items
---               out of the inventory, withdrawals put cash items back.
---   'account' - classic QBCore money account.
-local function MoneyMode()
-    return string.lower(tostring((Config.Money and Config.Money.Mode) or 'item'))
-end
-
+-- INVENTORY ONLY: cash is an inventory item. The wallet never touches bank
+-- or money accounts - everything moves inventory <-> wallet.
 local function CashItemName()
     return (Config.Money and Config.Money.ItemName) or 'cash'
 end
 
 --- Money the player currently holds outside the wallet (deposit source).
 local function GetCash(src)
-    if MoneyMode() == 'item' then
-        return CountInventoryItems(src, CashItemName())
-    end
-
-    local player = GetPlayer(src)
-    if not player then
-        return 0
-    end
-
-    local account = (Config.Money and Config.Money.Account) or 'cash'
-    local ok, amount = pcall(function()
-        return player.Functions.GetMoney(account)
-    end)
-
-    return ok and (tonumber(amount) or 0) or 0
+    return CountInventoryItems(src, CashItemName())
 end
 
 --- Take money from the player (used by deposits into the wallet).
@@ -478,21 +526,7 @@ local function RemoveCash(src, amount)
         return false
     end
 
-    if MoneyMode() == 'item' then
-        return RemoveItemAmount(src, CashItemName(), amount)
-    end
-
-    local player = GetPlayer(src)
-    if not player then
-        return false
-    end
-
-    local account = (Config.Money and Config.Money.Account) or 'cash'
-    local ok, success = pcall(function()
-        return player.Functions.RemoveMoney(account, amount, 'wallet-deposit')
-    end)
-
-    return ok and success ~= false
+    return RemoveItemAmount(src, CashItemName(), amount)
 end
 
 --- Give money to the player (used by withdrawals from the wallet).
@@ -502,21 +536,7 @@ local function AddCash(src, amount)
         return false
     end
 
-    if MoneyMode() == 'item' then
-        return (AddItem(src, CashItemName(), nil, amount))
-    end
-
-    local player = GetPlayer(src)
-    if not player then
-        return false
-    end
-
-    local account = (Config.Money and Config.Money.Account) or 'cash'
-    local ok, success = pcall(function()
-        return player.Functions.AddMoney(account, amount, 'wallet-withdraw')
-    end)
-
-    return ok and success ~= false
+    return (AddItem(src, CashItemName(), nil, amount))
 end
 
 -- wallet records -----------------------------------------------------------------
@@ -642,7 +662,6 @@ local function OpenWallet(src, serial)
             maxAmount = Config.Money.MaxAmount,
             maxBalance = Config.Money.MaxBalance,
             moneyEnabled = Config.Money.Enabled == true,
-            moneyMode = MoneyMode(),
             cashItemLabel = Config.Money.ItemLabel or 'Cash',
             inventoryCash = GetCash(src)
         }
@@ -822,7 +841,7 @@ local function ActionStoreItem(src, data)
     end
 
     -- Hard whitelist double-check (payload tamper safety).
-    local allowed = Config.AllowedItems[found.name]
+    local allowed = Allowed(found.name)
     if not allowed then
         Logger.Warn('store', 'Rejected store: item not in whitelist', { source = src, item = found.name })
         Notify(src, Config.Notifications.ItemNotAllowed, 'error')
@@ -973,8 +992,13 @@ local function ActionShowItem(src, data)
     end
 
     local entry = record.items[index]
-    local allowed = Config.AllowedItems[entry.name]
-    if not allowed or allowed.presentable == false then
+    -- Documents already inside the wallet can always be shown; only new
+    -- stores go through the live whitelist.
+    local allowed = Allowed(entry.name) or {
+        label = entry.label or entry.name,
+        presentable = true
+    }
+    if allowed.presentable == false then
         Notify(src, Config.Notifications.ItemNotAllowed, 'error')
         return
     end
@@ -1119,14 +1143,42 @@ local function UseWalletItem(src)
     OpenWallet(src)
 end
 
+-- ---------------------------------------------------------------------------
+-- Admin permissions (shared by /wallettest and the WAdmin panel)
+-- ---------------------------------------------------------------------------
+local function IsAdmin(src)
+    if not src or src <= 0 then
+        return true -- server console
+    end
+
+    if IsPlayerAceAllowed and IsPlayerAceAllowed(src, 'codexwallet.admin') then
+        return true
+    end
+
+    if QBCore and QBCore.Functions and QBCore.Functions.HasPermission then
+        local ok, result = pcall(function()
+            return QBCore.Functions.HasPermission(src, 'admin') or QBCore.Functions.HasPermission(src, 'god')
+        end)
+
+        if ok and result == true then
+            return true
+        end
+    end
+
+    return false
+end
+
 CreateThread(function()
     while not TryGetCore() do
         Wait(250)
     end
 
+    RebuildRuntimeWhitelist()
+
     Logger.Info('boot', 'CodeX Wallet started', {
         inventory = InventoryType(),
-        database = Storage.IsUsingDatabase() and 'oxmysql' or 'memory'
+        database = Storage.IsUsingDatabase() and 'oxmysql' or 'memory',
+        whitelist = #WhitelistList()
     })
 
     if QBCore.Functions and QBCore.Functions.CreateUseableItem then
@@ -1168,26 +1220,25 @@ CreateThread(function()
                 return
             end
 
-            local allowed = false
-
-            if IsPlayerAceAllowed and IsPlayerAceAllowed(source, 'codexwallet.admin') then
-                allowed = true
-            end
-
-            if not allowed and QBCore.Functions.HasPermission then
-                local ok, result = pcall(function()
-                    return QBCore.Functions.HasPermission(source, 'admin') or QBCore.Functions.HasPermission(source, 'god')
-                end)
-                allowed = ok and result == true
-            end
-
-            if not allowed then
+            if not IsAdmin(source) then
                 Notify(source, Config.Notifications.NoPermission, 'error')
                 return
             end
 
             local target = tonumber(args[1]) or source
             GiveTestKit(target)
+        end, false)
+    end
+
+    if Config.AdminPanel and Config.AdminPanel.Enabled ~= false
+        and Config.AdminPanel.Command and Config.AdminPanel.Command ~= '' then
+        RegisterCommand(Config.AdminPanel.Command, function(source)
+            if source <= 0 then
+                print('[codex_wallet] /' .. tostring(Config.AdminPanel.Command) .. ' can only be used in-game.')
+                return
+            end
+
+            OpenAdminPanel(source)
         end, false)
     end
 end)
@@ -1215,7 +1266,8 @@ function GiveTestKit(target)
     local samples = {
         'id_card',
         'driver_license',
-        'weaponlicense'
+        'weaponlicense',
+        'bank_card'
     }
 
     for _, name in ipairs(samples) do
@@ -1237,6 +1289,208 @@ function GiveTestKit(target)
     Logger.Info('testkit', 'Test kit issued', { source = src })
     Notify(src, 'Test kit received: wallet, documents and $5,000 cash.', 'success')
 end
+
+-- ---------------------------------------------------------------------------
+-- WAdmin panel: whitelist management (which items may live in the wallet)
+-- ---------------------------------------------------------------------------
+local function BuildAdminPayload()
+    return {
+        whitelist = WhitelistList(),
+        suggestions = (Config.AdminPanel and Config.AdminPanel.Suggestions) or {},
+        brand = Config.Brand,
+        settings = {
+            slots = (Config.Wallet and Config.Wallet.Slots) or 8,
+            maxWeight = (Config.Wallet and Config.Wallet.MaxWeight) or 2000,
+            cashItem = CashItemName(),
+            cashLabel = (Config.Money and Config.Money.ItemLabel) or 'Cash',
+            maxBalance = (Config.Money and Config.Money.MaxBalance) or 1000000
+        }
+    }
+end
+
+function OpenAdminPanel(src)
+    src = tonumber(src) or src
+
+    if not src or src <= 0 then
+        return
+    end
+
+    if not IsAdmin(src) then
+        Notify(src, Config.Notifications.NoPermission, 'error')
+        Logger.Warn('admin', 'Rejected admin panel open', { source = src })
+        return
+    end
+
+    TriggerClientEvent(RESOURCE .. ':openAdmin', src, BuildAdminPayload())
+
+    Logger.Info('admin', 'WAdmin panel opened', { source = src })
+end
+
+local function AdminAddItem(src, data)
+    local name = tostring(data.name or ''):lower():gsub('%s+', '')
+
+    if name == '' or #name > 64 or not name:match('^[%w_%-]+$') then
+        Notify(src, Config.Notifications.AdminInvalidName, 'error')
+        return
+    end
+
+    local label = tostring(data.label or '')
+    if label == '' or label == 'nil' then
+        label = name
+    end
+    if #label > 128 then
+        label = label:sub(1, 128)
+    end
+
+    local weight = math.floor(tonumber(data.weight) or 50)
+    if weight < 1 then
+        weight = 1
+    elseif weight > 10000 then
+        weight = 10000
+    end
+
+    local existed = runtimeAllowed[name] ~= nil
+
+    local saved = Storage.SaveWhitelistEntry({
+        name = name,
+        label = label,
+        weight = weight,
+        presentable = data.presentable ~= false,
+        enabled = true,
+        source = (runtimeAllowed[name] and runtimeAllowed[name].source) or 'admin'
+    })
+
+    if not saved then
+        Notify(src, Config.Notifications.NotReady, 'error')
+        return
+    end
+
+    RebuildRuntimeWhitelist()
+
+    Logger.Info('admin', existed and 'Whitelist entry updated' or 'Whitelist entry added', {
+        source = src,
+        item = name,
+        label = label,
+        weight = weight
+    })
+
+    Notify(src, (existed and Config.Notifications.AdminUpdated or Config.Notifications.AdminAdded):format(name), 'success')
+    TriggerClientEvent(RESOURCE .. ':openAdmin', src, BuildAdminPayload())
+end
+
+local function AdminToggleItem(src, data)
+    local name = tostring(data.name or '')
+    local entry = runtimeAllowed[name]
+
+    if not entry then
+        Notify(src, Config.Notifications.ItemNotAllowed, 'error')
+        return
+    end
+
+    local saved = Storage.SaveWhitelistEntry({
+        name = name,
+        label = entry.label,
+        weight = entry.weight,
+        presentable = entry.presentable,
+        enabled = not entry.enabled,
+        source = entry.source
+    })
+
+    if not saved then
+        Notify(src, Config.Notifications.NotReady, 'error')
+        return
+    end
+
+    RebuildRuntimeWhitelist()
+
+    Logger.Info('admin', 'Whitelist entry toggled', {
+        source = src,
+        item = name,
+        enabled = not entry.enabled
+    })
+
+    Notify(src, Config.Notifications.AdminToggled:format(name, (not entry.enabled) and 'ON' or 'OFF'), 'success')
+    TriggerClientEvent(RESOURCE .. ':openAdmin', src, BuildAdminPayload())
+end
+
+local function AdminRemoveItem(src, data)
+    local name = tostring(data.name or '')
+    local entry = runtimeAllowed[name]
+
+    if not entry then
+        Notify(src, Config.Notifications.ItemNotAllowed, 'error')
+        return
+    end
+
+    local saved
+
+    if entry.source == 'config' then
+        -- Config defaults cannot vanish from config.lua - persist them disabled.
+        saved = Storage.SaveWhitelistEntry({
+            name = name,
+            label = entry.label,
+            weight = entry.weight,
+            presentable = entry.presentable,
+            enabled = false,
+            source = 'config'
+        })
+    else
+        saved = Storage.DeleteWhitelistEntry(name)
+    end
+
+    if not saved then
+        Notify(src, Config.Notifications.NotReady, 'error')
+        return
+    end
+
+    RebuildRuntimeWhitelist()
+
+    Logger.Info('admin', 'Whitelist entry removed', { source = src, item = name })
+    Notify(src, Config.Notifications.AdminRemoved:format(name), 'success')
+    TriggerClientEvent(RESOURCE .. ':openAdmin', src, BuildAdminPayload())
+end
+
+RegisterNetEvent(RESOURCE .. ':adminAction', function(action, data)
+    local src = source
+
+    if type(action) ~= 'string' then
+        return
+    end
+
+    if not IsAdmin(src) then
+        Notify(src, Config.Notifications.NoPermission, 'error')
+        Logger.Warn('admin', 'Rejected admin action: no permission', { source = src, action = action })
+        return
+    end
+
+    data = type(data) == 'table' and data or {}
+
+    if action == 'refresh' then
+        TriggerClientEvent(RESOURCE .. ':openAdmin', src, BuildAdminPayload())
+        return
+    end
+
+    if action == 'addItem' then
+        AdminAddItem(src, data)
+        return
+    end
+
+    if action == 'toggleItem' then
+        AdminToggleItem(src, data)
+        return
+    end
+
+    if action == 'removeItem' then
+        AdminRemoveItem(src, data)
+        return
+    end
+
+    Logger.Warn('admin', 'Unknown admin action', { source = src, action = action })
+end)
+
+RegisterNetEvent(RESOURCE .. ':requestAdmin', function()
+    OpenAdminPanel(source)
+end)
 
 -- cleanup ---------------------------------------------------------------------------
 AddEventHandler('playerDropped', function()

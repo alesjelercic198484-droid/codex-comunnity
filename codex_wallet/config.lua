@@ -43,26 +43,19 @@ Config.Wallet = {
 }
 
 -- ---------------------------------------------------------------------------
--- Cash inside the wallet
+-- Cash inside the wallet (INVENTORY ONLY - never linked to any bank/account)
 -- ---------------------------------------------------------------------------
+-- The wallet only ever holds what physically sits in the inventory:
+-- "To wallet" removes cash items from the inventory, "To inventory" gives
+-- cash items back. The bank / money accounts are never touched.
 Config.Money = {
     Enabled = true,
 
-    -- 'item'    : cash is an INVENTORY ITEM. "Deposit" moves cash items from
-    --              the inventory into the wallet, "Withdraw" gives cash items
-    --              back into the inventory.
-    -- 'account' : classic behaviour - cash moves between the QBCore money
-    --              account and the wallet.
-    Mode = 'item',
-
-    -- Inventory item used as cash when Mode = 'item'.
+    -- Inventory item used as cash.
     -- Register it in your inventory if it does not exist yet
     -- (an optional example is included in install/qb_items.lua).
     ItemName = 'cash',
     ItemLabel = 'Cash',
-
-    -- QBCore money account used when Mode = 'account'.
-    Account = 'cash',
 
     -- Minimum deposit / withdraw per operation.
     MinAmount = 1,
@@ -123,6 +116,27 @@ Config.Keybind = {
 -- Admin/testing command: gives a wallet, cash and sample ID cards.
 -- Permission: QBCore admin/god permission or ACE 'codexwallet.admin'.
 Config.AdminCommand = 'wallettest'
+
+-- ---------------------------------------------------------------------------
+-- WAdmin panel (in-game admin UI for wallet whitelist management)
+-- ---------------------------------------------------------------------------
+Config.AdminPanel = {
+    Enabled = true,
+
+    -- Command that opens the WAdmin NUI (permission-gated).
+    Command = 'walletadmin',
+
+    -- Suggested quick-add spawn codes shown as chips in the panel.
+    Suggestions = {
+        'creditcard',
+        'bank_card',
+        'police_badge',
+        'money',
+        'id_card',
+        'driver_license',
+        'weaponlicense'
+    }
+}
 
 -- ---------------------------------------------------------------------------
 -- Showing ID cards from the wallet to nearby players
@@ -197,5 +211,12 @@ Config.Notifications = {
     NothingToStore = 'You have nothing that can be stored in your wallet.',
     Presented = 'You showed your %s.',
     ReceivedCard = '%s showed you their %s.',
-    Cooldown = 'Slow down a little.'
+    Cooldown = 'Slow down a little.',
+
+    -- WAdmin panel
+    AdminInvalidName = 'Invalid spawn code. Use letters, numbers, underscore or dash (max 64 characters).',
+    AdminAdded = 'Added "%s" to the wallet whitelist.',
+    AdminUpdated = 'Updated "%s" in the wallet whitelist.',
+    AdminRemoved = 'Removed "%s" from the wallet whitelist.',
+    AdminToggled = 'Whitelist entry "%s" turned %s.'
 }

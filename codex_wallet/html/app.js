@@ -256,6 +256,114 @@
         post('close', {});
     }
 
+    // -- admin (WAdmin) ----------------------------------------------------
+    const adminApp = document.getElementById('admin-app');
+    let adminState = {
+        whitelist: [],
+        suggestions: [],
+        settings: {},
+        filter: ''
+    };
+
+    function renderAdmin() {
+        const settings = adminState.settings || {};
+
+        document.getElementById('set-slots').textContent = settings.slots != null ? settings.slots : '—';
+        document.getElementById('set-weight').textContent =
+            settings.maxWeight != null ? settings.maxWeight + ' g' : '—';
+        document.getElementById('set-cash').textContent =
+            settings.cashItem ? `${settings.cashLabel || 'Cash'} (${settings.cashItem})` : '—';
+        document.getElementById('set-balance').textContent =
+            settings.maxBalance != null ? '$' + formatMoney(settings.maxBalance) : '—';
+        document.getElementById('admin-slots-chip').textContent =
+            (settings.slots != null ? settings.slots : '?') + ' slots';
+
+        // suggestions
+        const suggestWrap = document.getElementById('admin-suggestions');
+        suggestWrap.innerHTML = '';
+        (adminState.suggestions || []).forEach(function (spawn) {
+            const chip = el('button', 'chip', spawn);
+            chip.addEventListener('click', function () {
+                document.getElementById('admin-name').value = spawn;
+                const labelInput = document.getElementById('admin-label');
+                if (!labelInput.value) {
+                    labelInput.value = spawn
+                        .replace(/[_-]+/g, ' ')
+                        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+                }
+            });
+            suggestWrap.appendChild(chip);
+        });
+
+        renderAdminList();
+    }
+
+    function renderAdminList() {
+        const list = document.getElementById('admin-list');
+        const empty = document.getElementById('admin-empty');
+        const filter = (adminState.filter || '').toLowerCase();
+        list.innerHTML = '';
+
+        const items = (adminState.whitelist || []).filter(function (entry) {
+            return !filter
+                || entry.name.toLowerCase().indexOf(filter) !== -1
+                || (entry.label || '').toLowerCase().indexOf(filter) !== -1;
+        });
+
+        if (!items.length) {
+            list.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        list.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        items.forEach(function (entry) {
+            const row = el('div', 'admin-row-item' + (entry.enabled ? '' : ' disabled-row'));
+
+            row.appendChild(el('div', 'doc-icon', iconFor(entry.name)));
+
+            const info = el('div', 'admin-info');
+            info.appendChild(el('div', 'admin-spawn', entry.name));
+            info.appendChild(el('span', 'admin-meta',
+                `${entry.label || entry.name} • ${entry.weight} g • ${entry.presentable ? 'presentable' : 'not presentable'}`));
+            row.appendChild(info);
+
+            const tag = el('span', 'admin-tag' + (entry.enabled ? '' : ' tag-off') +
+                (entry.source === 'config' && entry.enabled ? ' tag-config' : ''),
+                entry.enabled ? (entry.source === 'config' ? 'default' : 'on') : 'off');
+            row.appendChild(tag);
+
+            const toggleBtn = el('button', 'btn btn-small btn-outline', entry.enabled ? 'Disable' : 'Enable');
+            toggleBtn.addEventListener('click', function () {
+                post('adminAction', { action: 'toggleItem', data: { name: entry.name } });
+            });
+            row.appendChild(toggleBtn);
+
+            const removeBtn = el('button', 'btn btn-small btn-outline btn-danger', 'Remove');
+            removeBtn.addEventListener('click', function () {
+                post('adminAction', { action: 'removeItem', data: { name: entry.name } });
+            });
+            row.appendChild(removeBtn);
+
+            list.appendChild(row);
+        });
+    }
+
+    function openAdmin(payload) {
+        adminState.whitelist = (payload && payload.whitelist) || [];
+        adminState.suggestions = (payload && payload.suggestions) || [];
+        adminState.settings = (payload && payload.settings) || {};
+        renderAdmin();
+        adminApp.classList.remove('hidden');
+    }
+
+    function closeAdmin() {
+        adminApp.classList.add('hidden');
+        post('closeAdmin', {});
+    }
+
     // -- events ------------------------------------------------------------
     window.addEventListener('message', function (event) {
         const data = event.data || {};
@@ -264,6 +372,10 @@
             openWallet(data.payload);
         } else if (data.action === 'close') {
             walletApp.classList.add('hidden');
+        } else if (data.action === 'openAdmin') {
+            openAdmin(data.payload);
+        } else if (data.action === 'closeAdmin') {
+            adminApp.classList.add('hidden');
         } else if (data.action === 'showCard') {
             showCard(data.card, data.presenterName);
         } else if (data.action === 'closeCard') {
@@ -277,6 +389,10 @@
                 closeCard();
                 return;
             }
+            if (!adminApp.classList.contains('hidden')) {
+                closeAdmin();
+                return;
+            }
             if (!walletApp.classList.contains('hidden')) {
                 closeWallet();
             }
@@ -286,6 +402,37 @@
     // -- static bindings ---------------------------------------------------
     document.getElementById('btn-close').addEventListener('click', closeWallet);
     document.getElementById('btn-card-close').addEventListener('click', closeCard);
+    document.getElementById('btn-admin-close').addEventListener('click', closeAdmin);
+
+    document.getElementById('btn-admin-add').addEventListener('click', function () {
+        const name = document.getElementById('admin-name').value;
+        const label = document.getElementById('admin-label').value;
+        const weight = document.getElementById('admin-weight').value;
+        const presentable = document.getElementById('admin-presentable').checked;
+
+        if (!(name || '').trim()) {
+            post('notify', { message: 'Enter the item spawn code first.', kind: 'error' });
+            return;
+        }
+
+        post('adminAction', {
+            action: 'addItem',
+            data: {
+                name: name,
+                label: label,
+                weight: weight,
+                presentable: presentable
+            }
+        });
+
+        document.getElementById('admin-name').value = '';
+        document.getElementById('admin-label').value = '';
+    });
+
+    document.getElementById('admin-search').addEventListener('input', function (event) {
+        adminState.filter = event.target.value || '';
+        renderAdminList();
+    });
 
     document.getElementById('btn-deposit').addEventListener('click', function () {
         const input = document.getElementById('cash-amount');

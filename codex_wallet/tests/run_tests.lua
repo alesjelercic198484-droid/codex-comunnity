@@ -100,12 +100,10 @@ local function giveCash(src, amount)
     return Mock.players[src].Functions.AddItem(Config.Money.ItemName, amount, false, nil)
 end
 
---- Cash the player holds OUTSIDE the wallet (inventory items or account).
+--- Cash the player holds OUTSIDE the wallet (inventory cash items only -
+--- the wallet is never linked to a bank/money account).
 local function playerMoney(src)
-    if Config.Money.Mode == 'item' then
-        return Mock.countItems(src, Config.Money.ItemName)
-    end
-    return Mock.players[src].PlayerData.money.cash or 0
+    return Mock.countItems(src, Config.Money.ItemName)
 end
 
 local function dbWallet(serial)
@@ -178,9 +176,10 @@ assertEqual(event.args[1].wallet.serial, assigned, 'payload uses the assigned se
 assertTrue(dbWallet(assigned) ~= nil, 'wallet row created in database')
 
 -- ---------------------------------------------------------------------------
-section('3. Cash: inventory <-> wallet (item mode)')
+section('3. Cash: inventory <-> wallet (inventory only)')
 -- ---------------------------------------------------------------------------
-assertEqual(Config.Money.Mode, 'item', 'default money mode is inventory items')
+assertEqual(Config.Money.ItemName, 'cash', 'cash is an inventory item (no bank link)')
+assertTrue(Config.Money.Account == nil and Config.Money.Mode == nil, 'no account/bank mode configured')
 
 makeWalletPlayer(1, {})
 giveCash(1, 5000)
@@ -472,6 +471,7 @@ assertEqual(Mock.countItems(8, 'codex_wallet'), 1, 'test kit gives a wallet')
 assertEqual(Mock.countItems(8, 'id_card'), 1, 'test kit gives an ID card')
 assertEqual(Mock.countItems(8, 'driver_license'), 1, 'test kit gives a driver licence')
 assertEqual(Mock.countItems(8, 'weaponlicense'), 1, 'test kit gives a weapon licence')
+assertEqual(Mock.countItems(8, 'bank_card'), 1, 'test kit gives a bank card')
 assertEqual(Mock.countItems(8, Config.Money.ItemName), 5000, 'test kit gives $5,000 cash as inventory items')
 
 -- non-admin cannot use it
@@ -520,29 +520,92 @@ assertEqual(Mock.countItems(10, Config.Money.ItemName), 350, 'player inventory c
 Storage.SetDatabaseMode(true)
 
 -- ---------------------------------------------------------------------------
-section('11b. Account money mode (classic, still supported)')
+section('11b. WAdmin panel: whitelist management')
 -- ---------------------------------------------------------------------------
-Config.Money.Mode = 'account'
+-- non-admin cannot use the admin events
+Mock.permissions[20] = {}
+makeWalletPlayer(20, {})
+Mock.resetTraces()
+Mock.netTrigger(20, RESOURCE .. ':adminAction', 'addItem', { name = 'hackcard' })
+assertTrue(lastNotification() ~= nil and lastNotification().message == Config.Notifications.NoPermission,
+    'non-admin cannot modify the whitelist')
+assertEqual(Mock.whitelistDb['hackcard'], nil, 'non-admin add did not persist')
 
-makeWalletPlayer(11, { cash = 3000 })
+-- admin adds a new item by spawn code (e.g. creditcard)
+Mock.permissions[21] = { admin = true }
+makeWalletPlayer(21, {})
 Mock.resetTraces()
 
-local serial11 = walletSerial(11)
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'addItem', {
+    name = 'creditcard',
+    label = 'Credit Card',
+    weight = 20,
+    presentable = false
+})
 
-act(11, 'deposit', { amount = 1200 })
-assertEqual(Mock.players[11].PlayerData.money.cash, 1800, 'account mode: cash taken from money account')
-assertEqual(dbWallet(serial11).cash, 1200, 'account mode: cash added to wallet')
-assertEqual(totalMoney(11, serial11), 3000, 'account mode: total money conserved')
+assertEqual(Mock.whitelistDb['creditcard'] ~= nil, true, 'admin added creditcard to whitelist')
+assertEqual(Mock.whitelistDb['creditcard'].label, 'Credit Card', 'whitelist entry keeps label')
 
-act(11, 'withdraw', { amount = 700 })
-assertEqual(Mock.players[11].PlayerData.money.cash, 2500, 'account mode: cash paid to money account')
-assertEqual(dbWallet(serial11).cash, 500, 'account mode: cash removed from wallet')
-assertEqual(totalMoney(11, serial11), 3000, 'account mode: total money conserved after withdraw')
+local adminEvt = Mock.lastClientEvent('openAdmin')
+assertTrue(adminEvt ~= nil, 'admin panel payload refreshed after change')
+assertTrue(adminEvt.args[1].whitelist ~= nil, 'payload carries the whitelist')
 
-act(11, 'withdraw', { amount = 5000 })
-assertEqual(dbWallet(serial11).cash, 500, 'account mode: overdraw rejected')
+-- the new spawn code can now go into the wallet and back
+Mock.giveItem(21, 'creditcard', { number = '4242' })
+local ccSlot = Mock.getItem(21, 'creditcard').slot
+local serial21 = walletSerial(21)
 
-Config.Money.Mode = 'item'
+act(21, 'storeItem', { slot = ccSlot })
+assertEqual(Mock.countItems(21, 'creditcard'), 0, 'creditcard moved into the wallet')
+assertEqual(dbWallet(serial21).items[#dbWallet(serial21).items].name, 'creditcard', 'creditcard stored in wallet record')
+
+act(21, 'removeItem', { index = #dbWallet(serial21).items })
+assertEqual(Mock.countItems(21, 'creditcard'), 1, 'creditcard moved back to the inventory')
+
+-- invalid spawn codes are rejected
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'addItem', { name = 'bad name!!' })
+assertTrue(lastNotification().message == Config.Notifications.AdminInvalidName, 'invalid spawn code rejected')
+assertEqual(Mock.whitelistDb['bad name!!'], nil, 'invalid spawn code not persisted')
+
+-- admin adds police_badge with a spawn code at runtime
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'addItem', { name = 'police_badge', label = 'Police Badge', weight = 60 })
+assertEqual(Mock.whitelistDb['police_badge'] ~= nil, true, 'police_badge whitelist entry saved')
+
+-- toggling disables the item (it can no longer be stored) - the player still
+-- holds the creditcard returned by the earlier remove test
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'toggleItem', { name = 'creditcard' })
+
+ccSlot = Mock.getItem(21, 'creditcard').slot
+act(21, 'storeItem', { slot = ccSlot })
+assertEqual(Mock.countItems(21, 'creditcard'), 1, 'disabled item cannot be stored')
+assertEqual(Mock.whitelistDb['creditcard'].enabled, false, 'toggle persisted as disabled')
+
+-- toggle back on works again
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'toggleItem', { name = 'creditcard' })
+assertEqual(Mock.whitelistDb['creditcard'].enabled, true, 'toggle re-enabled persisted')
+
+-- removing an admin-added item deletes it
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'removeItem', { name = 'creditcard' })
+assertEqual(Mock.whitelistDb['creditcard'], nil, 'admin-added entry deleted from whitelist')
+
+-- removing a config-default item disables it (does not delete config)
+Mock.netTrigger(21, RESOURCE .. ':adminAction', 'removeItem', { name = 'driver_license' })
+assertEqual(Mock.whitelistDb['driver_license'] ~= nil, true, 'config-default entry kept as disabled override')
+assertEqual(Mock.whitelistDb['driver_license'].enabled, false, 'config-default entry disabled')
+
+Mock.giveItem(21, 'driver_license', {})
+local dlSlot21 = Mock.getItem(21, 'driver_license').slot
+act(21, 'storeItem', { slot = dlSlot21 })
+assertEqual(Mock.countItems(21, 'driver_license'), 1, 'removed config item can no longer be stored')
+
+-- console/admin can open the panel
+Mock.resetTraces()
+Mock.netTrigger(21, RESOURCE .. ':requestAdmin')
+assertTrue(Mock.lastClientEvent('openAdmin') ~= nil, 'admin panel opens for permitted admin')
+
+Mock.resetTraces()
+Mock.netTrigger(20, RESOURCE .. ':requestAdmin')
+assertEqual(Mock.lastClientEvent('openAdmin'), nil, 'admin panel refuses non-admin')
 
 -- ---------------------------------------------------------------------------
 section('12. Client shell')
@@ -578,6 +641,25 @@ assertEqual(Mock.serverEvents[1].args[1], 'deposit', 'action name forwarded inta
 Mock.resetTraces()
 Mock.clientTrigger(RESOURCE .. ':presentCard', { cardType = 'id_card', firstName = 'Jane' }, 1000, 'John Doe')
 assertEqual(Mock.nuiMessages[#Mock.nuiMessages].action, 'showCard', 'presented card forwarded to NUI')
+
+-- WAdmin NUI shell
+Mock.resetTraces()
+Mock.clientTrigger(RESOURCE .. ':openAdmin', {
+    whitelist = { { name = 'creditcard', label = 'Credit Card', weight = 20, presentable = false, enabled = true, source = 'admin' } },
+    suggestions = { 'creditcard' },
+    brand = Config.Brand,
+    settings = { slots = 8, maxWeight = 2000, cashItem = 'cash', cashLabel = 'Cash', maxBalance = 1000000 }
+})
+assertEqual(Mock.nuiMessages[#Mock.nuiMessages].action, 'openAdmin', 'admin payload forwarded to NUI')
+assertEqual(Mock.nuiFocus.focus, true, 'NUI focus taken when admin panel opens')
+
+Mock.resetTraces()
+Mock.nuiCall('adminAction', { action = 'addItem', data = { name = 'giftcard' } })
+assertEqual(Mock.serverEvents[1].name, RESOURCE .. ':adminAction', 'admin NUI action forwarded to server')
+assertEqual(Mock.serverEvents[1].args[1], 'addItem', 'admin action name forwarded intact')
+
+Mock.nuiCall('closeAdmin', {})
+assertEqual(Mock.nuiFocus.focus, false, 'admin focus released on close')
 
 -- ESC/close safety: resource stop releases focus
 Mock.clientTrigger(RESOURCE .. ':openWallet', { wallet = {}, player = {} })

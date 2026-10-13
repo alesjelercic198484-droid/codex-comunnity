@@ -13,6 +13,7 @@
 Storage = {}
 
 local memory = {}
+local memoryWhitelist = {}
 local useDatabase = nil
 local initialised = false
 
@@ -60,6 +61,19 @@ local function ensureTable()
                 `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`serial`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ]])
+
+        MySQL.query.await([[
+            CREATE TABLE IF NOT EXISTS `codex_wallet_whitelist` (
+                `name` VARCHAR(64) NOT NULL,
+                `label` VARCHAR(128) NOT NULL DEFAULT '',
+                `weight` INT UNSIGNED NOT NULL DEFAULT 50,
+                `presentable` TINYINT(1) NOT NULL DEFAULT 1,
+                `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+                `source` VARCHAR(16) NOT NULL DEFAULT 'admin',
+                `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`name`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ]])
     end)
@@ -222,6 +236,132 @@ end
 --- Test helper: wipe the in-memory store.
 function Storage.ResetMemory()
     memory = {}
+    memoryWhitelist = {}
+end
+
+-- ---------------------------------------------------------------------------
+-- Whitelist (items allowed inside the wallet, managed via the WAdmin panel)
+-- ---------------------------------------------------------------------------
+
+local function normalizeWhitelistRow(row)
+    if not row then
+        return nil
+    end
+
+    return {
+        name = tostring(row.name),
+        label = tostring(row.label or ''),
+        weight = math.max(1, math.floor(tonumber(row.weight) or 50)),
+        presentable = tonumber(row.presentable) == 1 or row.presentable == true,
+        enabled = tonumber(row.enabled) == 1 or row.enabled == true,
+        source = tostring(row.source or 'admin')
+    }
+end
+
+--- Load every whitelist row (including disabled ones).
+function Storage.LoadWhitelist()
+    ensureTable()
+
+    if detectDatabase() then
+        local rows = MySQL.query.await('SELECT `name`, `label`, `weight`, `presentable`, `enabled`, `source` FROM `codex_wallet_whitelist`') or {}
+        local result = {}
+        for _, row in ipairs(rows) do
+            result[#result + 1] = normalizeWhitelistRow(row)
+        end
+        return result
+    end
+
+    local result = {}
+    for _, entry in pairs(memoryWhitelist) do
+        result[#result + 1] = normalizeWhitelistRow(entry)
+    end
+    table.sort(result, function(a, b)
+        return a.name < b.name
+    end)
+    return result
+end
+
+--- Insert or replace one whitelist entry.
+function Storage.SaveWhitelistEntry(entry)
+    ensureTable()
+
+    if not entry or not entry.name or tostring(entry.name) == '' then
+        return false
+    end
+
+    local row = normalizeWhitelistRow(entry)
+    row.presentable = row.presentable and 1 or 0
+    row.enabled = row.enabled and 1 or 0
+
+    if detectDatabase() then
+        local ok, err = pcall(function()
+            MySQL.insert.await([[
+                INSERT INTO `codex_wallet_whitelist` (`name`, `label`, `weight`, `presentable`, `enabled`, `source`)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    `label` = VALUES(`label`),
+                    `weight` = VALUES(`weight`),
+                    `presentable` = VALUES(`presentable`),
+                    `enabled` = VALUES(`enabled`),
+                    `source` = VALUES(`source`)
+            ]], {
+                row.name,
+                row.label,
+                row.weight,
+                row.presentable,
+                row.enabled,
+                row.source
+            })
+        end)
+
+        if not ok then
+            if Logger then
+                Logger.Error('storage', 'Failed to save whitelist entry', { name = row.name, error = tostring(err) })
+            end
+            return false
+        end
+
+        return true
+    end
+
+    memoryWhitelist[row.name] = {
+        name = row.name,
+        label = row.label,
+        weight = row.weight,
+        presentable = row.presentable == 1,
+        enabled = row.enabled == 1,
+        source = row.source
+    }
+
+    return true
+end
+
+--- Delete a whitelist entry completely.
+function Storage.DeleteWhitelistEntry(name)
+    ensureTable()
+    name = tostring(name or '')
+
+    if name == '' then
+        return false
+    end
+
+    if detectDatabase() then
+        local ok, err = pcall(function()
+            MySQL.update.await('DELETE FROM `codex_wallet_whitelist` WHERE `name` = ?', { name })
+        end)
+
+        if not ok then
+            if Logger then
+                Logger.Error('storage', 'Failed to delete whitelist entry', { name = name, error = tostring(err) })
+            end
+            return false
+        end
+
+        return true
+    end
+
+    memoryWhitelist[name] = nil
+    return true
 end
 
 --- Test helper: force memory/database mode.
